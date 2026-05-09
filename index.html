@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Train Yourself</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Train Yourself</h1>
+      <label class="toggle-wrap" title="Toggle Caveman Speak Mode">
+        <input type="checkbox" id="caveman-toggle" />
+        <span class="toggle-label">🦴 Caveman Mode</span>
+      </label>
+    </header>
+
+    <main>
+      <section class="panel" id="input-panel">
+        <h2 class="panel-title">Your Text</h2>
+        <textarea
+          id="input-text"
+          placeholder="Type something here..."
+          rows="8"
+        ></textarea>
+        <button id="transform-btn">Transform</button>
+      </section>
+
+      <section class="panel" id="output-panel">
+        <h2 class="panel-title" id="output-label">Output</h2>
+        <div id="output-text" class="output-box">Output appears here...</div>
+        <button id="copy-btn">Copy</button>
+      </section>
+    </main>
+
+    <div id="caveman-banner" class="hidden">
+      UGH. CAVEMAN MODE ON. ME SPEAK SIMPLE NOW.
+    </div>
+  </div>
+
+  <script src="caveman.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
