@@ -80,6 +80,7 @@ export type DraftType =
   | 'Claim_Letter'
   | 'Protest_Letter'
   | 'Reservation_of_Rights'
+  | 'Supplier_Challenge'
 
 export type DraftStatus = 'draft' | 'under_review' | 'approved' | 'sent' | 'superseded'
 
@@ -412,6 +413,7 @@ export interface Draft {
 
   draft_type: DraftType
   title: string
+  subject?: string
   body: string
   status: DraftStatus
   version: number

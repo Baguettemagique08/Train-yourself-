@@ -50,6 +50,7 @@ export const DRAFT_TYPE_OPTIONS: SelectOption[] = [
   { value: 'Internal_Memo', label: 'Internal Memo' },
   { value: 'Claim_Letter', label: 'Claim Letter' },
   { value: 'Protest_Letter', label: 'Protest Letter' },
+  { value: 'Supplier_Challenge', label: 'Supplier Challenge' },
 ]
 
 export const PRIORITY_OPTIONS: SelectOption[] = [

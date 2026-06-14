@@ -24,6 +24,7 @@ const DRAFT_TYPE_LABELS: Record<DraftType, string> = {
   Claim_Letter: 'Claim Letter',
   Protest_Letter: 'Protest Letter',
   Reservation_of_Rights: 'Reservation of Rights',
+  Supplier_Challenge: 'Supplier Challenge',
 }
 
 const STATUS_COLORS: Record<DraftStatus, string> = {
@@ -42,6 +43,7 @@ const TYPE_COLORS: Record<DraftType, string> = {
   Claim_Letter: 'bg-orange-100 text-orange-700',
   Protest_Letter: 'bg-red-100 text-red-700',
   Reservation_of_Rights: 'bg-rose-100 text-rose-700',
+  Supplier_Challenge: 'bg-amber-100 text-amber-700',
 }
 
 type FilterTab = 'all' | DraftType

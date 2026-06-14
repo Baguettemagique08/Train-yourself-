@@ -9,6 +9,7 @@ import { VesselsPage } from '@/pages/vessels/VesselsPage'
 import ReconcilerPage from '@/pages/reconciler/ReconcilerPage'
 import SpecsCheckerPage from '@/pages/specs/SpecsCheckerPage'
 import DraftingCenterPage from '@/pages/drafts/DraftingCenterPage'
+import ClaimDrafterPage from '@/pages/claim-drafter/ClaimDrafterPage'
 import FuelReadinessPage from '@/pages/fuel-readiness/FuelReadinessPage'
 import AdminPage from '@/pages/admin/AdminPage'
 
@@ -28,7 +29,8 @@ export default function App() {
           <Route path="/specs"       element={<SpecsCheckerPage />} />
 
           {/* Communications */}
-          <Route path="/drafts"      element={<DraftingCenterPage />} />
+          <Route path="/drafts"        element={<DraftingCenterPage />} />
+          <Route path="/claim-drafter" element={<ClaimDrafterPage />} />
 
           {/* Compliance */}
           <Route path="/fuel-readiness" element={<FuelReadinessPage />} />

@@ -9,6 +9,7 @@ import {
   Leaf,
   Building2,
   Ship,
+  PenLine,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -61,6 +62,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     {
       label: 'Communications',
       items: [
+        { to: '/claim-drafter', icon: PenLine, label: 'Claim Drafter' },
         { to: '/drafts', icon: FileText, label: 'Drafting Center', badge: pendingDrafts },
       ],
     },
