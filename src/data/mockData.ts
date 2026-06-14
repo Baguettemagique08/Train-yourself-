@@ -888,6 +888,20 @@ export const mockKPIs = {
   escalatedCases: { value: 1, delta: 1, trend: 'up' as const },
 }
 
+// ── Dispute volume trend (last 8 ISO weeks) ─────────────────────────────────────
+// Cases opened vs closed per week — used by the Dashboard trend panel.
+
+export const mockDisputeTrend = [
+  { period_start: '2026-04-20', label: 'W17', opened: 2, closed: 1 },
+  { period_start: '2026-04-27', label: 'W18', opened: 1, closed: 2 },
+  { period_start: '2026-05-04', label: 'W19', opened: 3, closed: 1 },
+  { period_start: '2026-05-11', label: 'W20', opened: 2, closed: 3 },
+  { period_start: '2026-05-18', label: 'W21', opened: 4, closed: 2 },
+  { period_start: '2026-05-25', label: 'W22', opened: 3, closed: 1 },
+  { period_start: '2026-06-01', label: 'W23', opened: 5, closed: 2 },
+  { period_start: '2026-06-08', label: 'W24', opened: 3, closed: 1 },
+]
+
 // ── Contacts ──────────────────────────────────────────────────────────────────
 
 export const mockContacts: Contact[] = [

@@ -542,6 +542,140 @@ export interface KPIData {
   trend?: 'up' | 'down' | 'neutral'
 }
 
+// ============================================================
+// DASHBOARD — shape returned by GET /api/dashboard
+// (one aggregate endpoint; see useDashboard hook)
+// ============================================================
+
+/** A single headline metric with period-over-period movement. */
+export interface DashboardKpi {
+  /** Current value for the metric. */
+  value: number
+  /** Change vs the previous comparable period (e.g. last week). */
+  delta: number
+  /** Direction of the delta. */
+  trend: 'up' | 'down' | 'neutral'
+  /**
+   * Whether an *increase* is operationally bad (e.g. more open cases).
+   * Drives whether an upward delta renders red or green.
+   */
+  higher_is_worse: boolean
+}
+
+export interface DashboardKpis {
+  open_cases: DashboardKpi
+  urgent_cases: DashboardKpi
+  pending_drafts: DashboardKpi
+  spec_alerts: DashboardKpi
+  readiness_reviews_due: DashboardKpi
+}
+
+export type DueUrgency = 'overdue' | 'today' | 'soon' | 'scheduled'
+
+/** A case that needs a human decision/action inside the current week. */
+export interface DashboardActionItem {
+  case_id: string
+  reference: string
+  vessel_name: string
+  port_name: string
+  supplier_name: string
+  fuel_type: FuelType
+  status: CaseStatus
+  priority: PriorityLevel
+  discrepancy_type: DiscrepancyType
+  /** Estimated financial exposure of the claim in USD. */
+  exposure_usd: number
+  /** Response/SLA deadline (ISO timestamp). */
+  due_date: string
+  /** Bucketed urgency, precomputed server-side against "now". */
+  due_urgency: DueUrgency
+  /** Short, human-readable next step (verb-first). */
+  next_action: string
+  assigned_to_name?: string
+}
+
+export interface DashboardActivityItem {
+  id: string
+  case_id: string
+  case_reference: string
+  activity_type: ActivityType
+  description: string
+  user_name?: string
+  created_at: string
+}
+
+export interface DashboardUploadItem {
+  id: string
+  case_id?: string
+  case_reference?: string
+  filename: string
+  document_type: DocumentType
+  status: DocumentStatus
+  created_at: string
+}
+
+/** A spec parameter currently outside tolerance, surfaced for triage. */
+export interface DashboardSpecAlert {
+  id: string
+  case_id: string
+  case_reference: string
+  vessel_name: string
+  parameter_name: string
+  unit: string
+  lab_result: number | null
+  limit: number | null
+  limit_kind: 'min' | 'max'
+  status: SpecStatus
+}
+
+/** A vessel readiness assessment that needs review before its target date. */
+export interface DashboardReadinessItem {
+  id: string
+  vessel_name: string
+  fuel_type: FuelType
+  status: FuelReadinessStatus
+  readiness_score: number
+  open_requirements: number
+  target_date?: string
+}
+
+export type RiskLevel = 'low' | 'medium' | 'high'
+
+/** Aggregated dispute exposure for a single counterparty (supplier/port). */
+export interface DashboardCounterpartyRisk {
+  id: string
+  name: string
+  kind: 'supplier' | 'port'
+  open_cases: number
+  total_cases: number
+  off_spec_cases: number
+  exposure_usd: number
+  risk_level: RiskLevel
+}
+
+/** One bucket in the dispute-volume trend (typically a calendar week). */
+export interface DashboardTrendPoint {
+  /** ISO date of the bucket start. */
+  period_start: string
+  /** Short axis label, e.g. "W22". */
+  label: string
+  opened: number
+  closed: number
+}
+
+export interface DashboardData {
+  /** When the snapshot was generated (ISO). */
+  generated_at: string
+  kpis: DashboardKpis
+  action_items: DashboardActionItem[]
+  activity: DashboardActivityItem[]
+  recent_uploads: DashboardUploadItem[]
+  spec_alerts: DashboardSpecAlert[]
+  readiness_due: DashboardReadinessItem[]
+  counterparty_risk: DashboardCounterpartyRisk[]
+  dispute_trend: DashboardTrendPoint[]
+}
+
 export interface ReconcilerRow {
   fuel_grade: FuelType
   vessel_mt?: number
