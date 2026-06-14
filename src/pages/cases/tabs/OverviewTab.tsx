@@ -95,7 +95,7 @@ export function OverviewTab({ case_ }: OverviewTabProps) {
             <DetailRow label="Delivery Date" value={
               <div className="flex items-center gap-2">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                {formatDate(case_.delivery_date)}
+                {formatDate(case_.delivery?.delivery_date ?? case_.opened_at)}
               </div>
             } />
             <DetailRow label="BDN Number" value={case_.delivery?.bdn_number ?? '—'} />

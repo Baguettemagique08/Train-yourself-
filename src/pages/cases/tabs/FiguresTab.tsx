@@ -17,7 +17,7 @@ export function FiguresTab({ caseId }: FiguresTabProps) {
   const vessel = measurements.find((m) => m.source === 'vessel')
   const barge = measurements.find((m) => m.source === 'barge')
   const mfm = measurements.find((m) => m.source === 'mfm')
-  const shore = measurements.find((m) => m.source === 'shore')
+  const shore = measurements.find((m) => m.source === 'manual')
 
   if (measurements.length === 0) {
     return (
@@ -30,13 +30,13 @@ export function FiguresTab({ caseId }: FiguresTabProps) {
   }
 
   const vsVesselBarge = vessel && barge
-    ? ((barge.net_quantity - vessel.net_quantity) / barge.net_quantity) * 100
+    ? ((barge.quantity_mt - vessel.quantity_mt) / barge.quantity_mt) * 100
     : null
   const vsVesselMfm = vessel && mfm
-    ? ((mfm.net_quantity - vessel.net_quantity) / mfm.net_quantity) * 100
+    ? ((mfm.quantity_mt - vessel.quantity_mt) / mfm.quantity_mt) * 100
     : null
   const vsBargeMfm = barge && mfm
-    ? ((barge.net_quantity - mfm.net_quantity) / barge.net_quantity) * 100
+    ? ((barge.quantity_mt - mfm.quantity_mt) / barge.quantity_mt) * 100
     : null
 
   return (
@@ -71,24 +71,24 @@ export function FiguresTab({ caseId }: FiguresTabProps) {
               {vsVesselBarge !== null && vessel && barge && (
                 <ReconcilerRow
                   label="Vessel vs Barge/BDN"
-                  aQty={vessel.net_quantity}
-                  bQty={barge.net_quantity}
+                  aQty={vessel.quantity_mt}
+                  bQty={barge.quantity_mt}
                   pct={vsVesselBarge}
                 />
               )}
               {vsVesselMfm !== null && vessel && mfm && (
                 <ReconcilerRow
                   label="Vessel vs MFM"
-                  aQty={vessel.net_quantity}
-                  bQty={mfm.net_quantity}
+                  aQty={vessel.quantity_mt}
+                  bQty={mfm.quantity_mt}
                   pct={vsVesselMfm}
                 />
               )}
               {vsBargeMfm !== null && barge && mfm && (
                 <ReconcilerRow
                   label="Barge/BDN vs MFM"
-                  aQty={barge.net_quantity}
-                  bQty={mfm.net_quantity}
+                  aQty={barge.quantity_mt}
+                  bQty={mfm.quantity_mt}
                   pct={vsBargeMfm}
                 />
               )}
@@ -123,13 +123,13 @@ export function FiguresTab({ caseId }: FiguresTabProps) {
               {measurements.map((m) => (
                 <tr key={m.id} className="table-row">
                   <td className="table-td font-medium capitalize">{m.source.replace('_', ' ')}</td>
-                  <td className="table-td"><FuelTypeBadge fuel={m.fuel_type} /></td>
-                  <td className="table-td text-right font-mono">{formatQuantity(m.gross_quantity, 3)}</td>
-                  <td className="table-td text-right font-mono font-semibold">{formatQuantity(m.net_quantity, 3)}</td>
-                  <td className="table-td text-right text-slate-500">{m.temperature ?? '—'}</td>
-                  <td className="table-td text-right text-slate-500">{m.density ? formatQuantity(m.density, 4) : '—'}</td>
+                  <td className="table-td"><FuelTypeBadge fuel={m.fuel_grade} /></td>
+                  <td className="table-td text-right font-mono">{formatQuantity(m.quantity_mt, 3)}</td>
+                  <td className="table-td text-right font-mono font-semibold">{formatQuantity(m.quantity_mt, 3)}</td>
+                  <td className="table-td text-right text-slate-500">{m.temperature_c ?? '—'}</td>
+                  <td className="table-td text-right text-slate-500">{m.density_at_obs_kgm3 ? formatQuantity(m.density_at_obs_kgm3, 4) : '—'}</td>
                   <td className="table-td text-right text-slate-500">{m.vcf ? formatQuantity(m.vcf, 4) : '—'}</td>
-                  <td className="table-td text-slate-500 text-xs">{m.measured_by}</td>
+                  <td className="table-td text-slate-500 text-xs">{m.surveyor_name}</td>
                   <td className="table-td text-slate-400 text-xs max-w-xs truncate">{m.notes ?? '—'}</td>
                 </tr>
               ))}
@@ -151,9 +151,9 @@ function MeasurementCard({ m, label, color }: { m: Measurement; label: string; c
   return (
     <div className={`border rounded-lg p-4 ${colorMap[color]}`}>
       <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</p>
-      <p className="text-2xl font-bold mt-1">{formatQuantity(m.net_quantity, 3)}</p>
-      <p className="text-xs opacity-70 mt-0.5">MT net</p>
-      <p className="text-xs mt-2 opacity-70">Gross: {formatQuantity(m.gross_quantity, 3)} MT</p>
+      <p className="text-2xl font-bold mt-1">{formatQuantity(m.quantity_mt, 3)}</p>
+      <p className="text-xs opacity-70 mt-0.5">MT</p>
+      <p className="text-xs mt-2 opacity-70">{m.surveyor_name ?? '—'}</p>
     </div>
   )
 }

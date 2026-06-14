@@ -73,7 +73,7 @@ export function SpecsTab({ caseId }: SpecsTabProps) {
                     key={spec.id}
                     className={`table-row ${isOffSpec ? 'bg-red-50/50' : ''}`}
                   >
-                    <td className="table-td font-medium">{spec.parameter}</td>
+                    <td className="table-td font-medium">{spec.parameter_name}</td>
                     <td className="table-td text-right text-slate-400">{spec.unit || '—'}</td>
                     <td className="table-td text-right font-mono">
                       {spec.bdn_value !== undefined && spec.bdn_value !== null
@@ -117,7 +117,7 @@ export function SpecsTab({ caseId }: SpecsTabProps) {
               <div key={spec.id} className="flex gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-800">{spec.parameter}</p>
+                  <p className="text-sm font-semibold text-red-800">{spec.parameter_name}</p>
                   <p className="text-xs text-red-700 mt-0.5">{spec.notes}</p>
                   <p className="text-xs text-red-600 mt-1">
                     Lab: <strong>{spec.lab_result}</strong> {spec.unit}

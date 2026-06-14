@@ -99,7 +99,7 @@ function buildRows(caseId: string): SpecRow[] {
   }
   return checks.map((sc) => ({
     id: sc.id,
-    parameter: sc.parameter,
+    parameter: sc.parameter_name,
     unit: sc.unit,
     bdnValue: sc.bdn_value != null ? String(sc.bdn_value) : '',
     contractMin: sc.contract_min != null ? String(sc.contract_min) : '',
@@ -266,7 +266,7 @@ export default function SpecsCheckerPage() {
               <span><span className="font-medium text-slate-700">Vessel:</span> {selectedCase.vessel?.name}</span>
               <span><span className="font-medium text-slate-700">Port:</span> {selectedCase.port?.name}</span>
               <span><span className="font-medium text-slate-700">Supplier:</span> {selectedCase.supplier?.name}</span>
-              <span><span className="font-medium text-slate-700">Delivery:</span> {formatDate(selectedCase.delivery_date)}</span>
+              <span><span className="font-medium text-slate-700">Delivery:</span> {formatDate(selectedCase.delivery?.delivery_date ?? selectedCase.opened_at)}</span>
               <span><span className="font-medium text-slate-700">Fuel:</span> {selectedCase.fuel_type}</span>
             </div>
           )}

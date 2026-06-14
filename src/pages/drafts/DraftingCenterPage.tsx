@@ -23,6 +23,7 @@ const DRAFT_TYPE_LABELS: Record<DraftType, string> = {
   Internal_Memo: 'Internal Memo',
   Claim_Letter: 'Claim Letter',
   Protest_Letter: 'Protest Letter',
+  Reservation_of_Rights: 'Reservation of Rights',
 }
 
 const STATUS_COLORS: Record<DraftStatus, string> = {
@@ -30,6 +31,7 @@ const STATUS_COLORS: Record<DraftStatus, string> = {
   under_review: 'bg-amber-100 text-amber-700',
   approved: 'bg-green-100 text-green-700',
   sent: 'bg-blue-100 text-blue-700',
+  superseded: 'bg-slate-100 text-slate-400',
 }
 
 const TYPE_COLORS: Record<DraftType, string> = {
@@ -39,6 +41,7 @@ const TYPE_COLORS: Record<DraftType, string> = {
   Internal_Memo: 'bg-slate-100 text-slate-600',
   Claim_Letter: 'bg-orange-100 text-orange-700',
   Protest_Letter: 'bg-red-100 text-red-700',
+  Reservation_of_Rights: 'bg-rose-100 text-rose-700',
 }
 
 type FilterTab = 'all' | DraftType
@@ -80,7 +83,7 @@ function NewDraftModal({ onClose, onCreate }: NewDraftModalProps) {
   const [caseId, setCaseId] = useState('')
   const [templateId, setTemplateId] = useState('')
 
-  const availableTemplates = mockTemplates.filter((t) => t.type === draftType)
+  const availableTemplates = mockTemplates.filter((t) => t.draft_type === draftType)
 
   const handleCreate = () => {
     if (!title.trim()) return
@@ -91,9 +94,9 @@ function NewDraftModal({ onClose, onCreate }: NewDraftModalProps) {
     const newDraft: Draft = {
       id: `dr-new-${Date.now()}`,
       case_id: caseId || 'c1',
-      type: draftType,
+      draft_type: draftType,
       title: title.trim(),
-      content: template?.content ?? '',
+      body: template?.body ?? '',
       status: 'draft',
       version: 1,
       created_by: 'u4',
@@ -205,7 +208,7 @@ export default function DraftingCenterPage() {
 
   const filteredDrafts = useMemo(() => {
     if (filterTab === 'all') return drafts
-    return drafts.filter((d) => d.type === filterTab)
+    return drafts.filter((d) => d.draft_type === filterTab)
   }, [drafts, filterTab])
 
   const updateDraftField = useCallback(
@@ -349,7 +352,7 @@ export default function DraftingCenterPage() {
                     {draft.title}
                   </p>
                   <div className="flex flex-wrap gap-1 mb-1.5">
-                    <TypeBadge type={draft.type} />
+                    <TypeBadge type={draft.draft_type} />
                     <StatusBadge status={draft.status} />
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-400">
@@ -407,7 +410,7 @@ export default function DraftingCenterPage() {
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <TypeBadge type={selectedDraft.type} />
+                      <TypeBadge type={selectedDraft.draft_type} />
                       <StatusBadge status={selectedDraft.status} />
                       <span className="text-xs text-slate-400 font-mono">v{selectedDraft.version}</span>
                     </div>
@@ -480,17 +483,17 @@ export default function DraftingCenterPage() {
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
                 <textarea
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 font-mono text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none leading-relaxed"
-                  rows={Math.max(30, selectedDraft.content.split('\n').length + 5)}
-                  value={selectedDraft.content}
-                  onChange={(e) => updateDraftField('content', e.target.value)}
+                  rows={Math.max(30, selectedDraft.body.split('\n').length + 5)}
+                  value={selectedDraft.body}
+                  onChange={(e) => updateDraftField('body', e.target.value)}
                   placeholder="Begin drafting your communication here..."
                 />
                 <div className="flex items-center gap-4 text-xs text-slate-400">
-                  <span>{selectedDraft.content.length.toLocaleString()} characters</span>
+                  <span>{selectedDraft.body.length.toLocaleString()} characters</span>
                   <span className="text-slate-300">·</span>
-                  <span>{wordCount(selectedDraft.content).toLocaleString()} words</span>
+                  <span>{wordCount(selectedDraft.body).toLocaleString()} words</span>
                   <span className="text-slate-300">·</span>
-                  <span>{selectedDraft.content.split('\n').length} lines</span>
+                  <span>{selectedDraft.body.split('\n').length} lines</span>
                 </div>
 
                 {/* Version History Panel */}

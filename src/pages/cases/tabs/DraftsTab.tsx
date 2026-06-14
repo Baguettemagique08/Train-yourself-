@@ -54,7 +54,7 @@ export function DraftsTab({ caseId }: DraftsTabProps) {
                     <FileText className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-slate-900 truncate">{d.title}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">v{d.version} · {d.type.replace('_', ' ')}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">v{d.version} · {d.draft_type.replace('_', ' ')}</p>
                     </div>
                   </div>
                   <DraftStatusBadge status={d.status} />
@@ -99,7 +99,7 @@ export function DraftsTab({ caseId }: DraftsTabProps) {
               <div className="p-5">
                 <textarea
                   className="w-full h-96 text-xs font-mono text-slate-800 bg-white border-0 resize-none focus:outline-none leading-relaxed"
-                  defaultValue={activeDraft.content}
+                  defaultValue={activeDraft.body}
                   readOnly={activeDraft.status === 'sent'}
                 />
               </div>
@@ -120,7 +120,7 @@ export function DraftsTab({ caseId }: DraftsTabProps) {
 
 function NewDraftModal({ open, onClose, caseId: _caseId }: { open: boolean; onClose: () => void; caseId: string }) {
   const [selectedType, setSelectedType] = useState<DraftType>('LOP_Response')
-  const template = mockTemplates.find((t) => t.type === selectedType)
+  const template = mockTemplates.find((t) => t.draft_type === selectedType)
 
   return (
     <Modal open={open} onClose={onClose} title="New Draft" size="xl"
@@ -145,7 +145,7 @@ function NewDraftModal({ open, onClose, caseId: _caseId }: { open: boolean; onCl
           label="Content"
           rows={20}
           className="font-mono text-xs"
-          defaultValue={template?.content ?? ''}
+          defaultValue={template?.body ?? ''}
           hint="Edit the template before saving. All fields in [brackets] must be completed."
         />
       </div>

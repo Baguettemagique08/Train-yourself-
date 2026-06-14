@@ -73,6 +73,7 @@ export function discrepancyLabel(type: DiscrepancyType): string {
     off_spec: 'Off-Spec',
     mfm_dispute: 'MFM Dispute',
     documentation: 'Documentation',
+    contamination: 'Contamination',
     other: 'Other',
   }
   return map[type] ?? type
@@ -88,6 +89,11 @@ export function documentTypeLabel(type: DocumentType): string {
     MFM_Log: 'MFM Log',
     Ullage_Report: 'Ullage Report',
     Charter_Party: 'Charter Party',
+    Statement_of_Facts: 'Statement of Facts',
+    Laytime_Statement: 'Laytime Statement',
+    Survey_Report: 'Survey Report',
+    Invoice: 'Invoice',
+    Correspondence: 'Correspondence',
     Other: 'Other',
   }
   return map[type] ?? type
@@ -99,6 +105,7 @@ export function draftStatusLabel(status: DraftStatus): string {
     under_review: 'Under Review',
     approved: 'Approved',
     sent: 'Sent',
+    superseded: 'Superseded',
   }
   return map[status] ?? status
 }
@@ -150,15 +157,19 @@ export function specStatusColor(status: SpecStatus): string {
 export function fuelTypeColor(fuel: FuelType): string {
   const map: Record<FuelType, string> = {
     VLSFO: 'bg-blue-100 text-blue-700',
+    ULSFO: 'bg-blue-100 text-blue-800',
     HSFO: 'bg-orange-100 text-orange-700',
     MGO: 'bg-teal-100 text-teal-700',
     LSMGO: 'bg-cyan-100 text-cyan-700',
     LNG: 'bg-purple-100 text-purple-700',
+    LPG: 'bg-violet-100 text-violet-700',
     Methanol: 'bg-pink-100 text-pink-700',
     Ammonia: 'bg-yellow-100 text-yellow-700',
     Biofuel: 'bg-green-100 text-green-700',
     B24: 'bg-lime-100 text-lime-700',
     B100: 'bg-emerald-100 text-emerald-700',
+    HVO: 'bg-green-100 text-green-800',
+    Other: 'bg-slate-100 text-slate-600',
   }
   return map[fuel] ?? 'bg-slate-100 text-slate-600'
 }

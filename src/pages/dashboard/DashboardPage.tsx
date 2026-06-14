@@ -106,7 +106,7 @@ export function DashboardPage() {
                         </div>
                         <div className="text-sm font-medium text-slate-900 truncate">{c.vessel?.name}</div>
                         <div className="text-xs text-slate-500 mt-0.5">
-                          {c.port?.name} · {c.supplier?.name} · {formatDate(c.delivery_date)}
+                          {c.port?.name} · {c.supplier?.name} · {formatDate(c.delivery?.delivery_date ?? c.opened_at)}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -177,7 +177,7 @@ export function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-slate-900 truncate">{doc.filename}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{doc.type} · {formatRelative(doc.created_at)}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{doc.document_type} · {formatRelative(doc.created_at)}</p>
                   </div>
                   <span className={`text-xs rounded-full px-1.5 py-0.5 flex-shrink-0 ${
                     doc.status === 'ready' ? 'bg-green-100 text-green-700'

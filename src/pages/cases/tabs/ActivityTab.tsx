@@ -40,7 +40,7 @@ export function ActivityTab({ caseId }: ActivityTabProps) {
       <div className="absolute left-5 top-6 bottom-6 w-px bg-slate-200" />
 
       {activities.map((act, i) => {
-        const Icon = ACTION_ICONS[act.action] ?? MessageSquare
+        const Icon = ACTION_ICONS[act.activity_type] ?? MessageSquare
         return (
           <div key={act.id} className={`relative flex gap-4 ${i < activities.length - 1 ? 'pb-6' : ''}`}>
             {/* Icon bubble */}
@@ -67,7 +67,7 @@ export function ActivityTab({ caseId }: ActivityTabProps) {
                   </div>
                 </div>
                 <span className="text-xs text-slate-400 uppercase tracking-wide flex-shrink-0">
-                  {act.action.replace(/_/g, ' ')}
+                  {act.activity_type.replace(/_/g, ' ')}
                 </span>
               </div>
             </div>

@@ -1,6 +1,22 @@
 // ============================================================
-// ENUMS
+// ENUMS — mirror the Postgres enum definitions exactly
 // ============================================================
+
+export type UserRole =
+  | 'admin'
+  | 'senior_broker'
+  | 'broker'
+  | 'analyst'
+  | 'readonly'
+
+export type CompanyType = 'shipowner' | 'charterer' | 'supplier' | 'other'
+
+export type DeliveryStatus =
+  | 'in_progress'
+  | 'completed'
+  | 'confirmed'
+  | 'disputed'
+  | 'cancelled'
 
 export type CaseStatus =
   | 'open'
@@ -9,6 +25,17 @@ export type CaseStatus =
   | 'escalated'
   | 'resolved'
   | 'closed'
+
+export type PriorityLevel = 'low' | 'normal' | 'high' | 'urgent'
+
+export type DiscrepancyType =
+  | 'quantity_short'
+  | 'quantity_over'
+  | 'off_spec'
+  | 'mfm_dispute'
+  | 'documentation'
+  | 'contamination'
+  | 'other'
 
 export type DocumentType =
   | 'BDN'
@@ -19,19 +46,31 @@ export type DocumentType =
   | 'MFM_Log'
   | 'Ullage_Report'
   | 'Charter_Party'
+  | 'Statement_of_Facts'
+  | 'Laytime_Statement'
+  | 'Survey_Report'
+  | 'Invoice'
+  | 'Correspondence'
   | 'Other'
 
-export type FuelType =
-  | 'VLSFO'
-  | 'HSFO'
-  | 'MGO'
-  | 'LSMGO'
-  | 'LNG'
-  | 'Methanol'
-  | 'Ammonia'
-  | 'Biofuel'
-  | 'B24'
-  | 'B100'
+export type DocumentStatus =
+  | 'uploading'
+  | 'processing'
+  | 'ready'
+  | 'needs_review'
+  | 'failed'
+
+export type ExtractionStatus =
+  | 'pending'
+  | 'processing'
+  | 'complete'
+  | 'failed'
+  | 'not_applicable'
+
+// Source of a bunker quantity figure
+export type MeasurementSource = 'vessel' | 'barge' | 'mfm' | 'surveyor' | 'manual'
+
+export type SpecStatus = 'ok' | 'warning' | 'off_spec' | 'not_tested'
 
 export type DraftType =
   | 'LOP_Response'
@@ -40,27 +79,55 @@ export type DraftType =
   | 'Internal_Memo'
   | 'Claim_Letter'
   | 'Protest_Letter'
+  | 'Reservation_of_Rights'
 
-export type DraftStatus = 'draft' | 'under_review' | 'approved' | 'sent'
+export type DraftStatus = 'draft' | 'under_review' | 'approved' | 'sent' | 'superseded'
 
-export type DiscrepancyType =
-  | 'quantity_short'
-  | 'quantity_over'
-  | 'off_spec'
-  | 'mfm_dispute'
-  | 'documentation'
-  | 'other'
-
-export type SpecStatus = 'ok' | 'warning' | 'off_spec' | 'not_tested'
-
-export type DocumentStatus = 'processing' | 'ready' | 'needs_review' | 'failed'
-
-export type UserRole = 'admin' | 'senior_broker' | 'broker' | 'analyst' | 'readonly'
+export type FuelType =
+  | 'VLSFO'
+  | 'ULSFO'
+  | 'HSFO'
+  | 'MGO'
+  | 'LSMGO'
+  | 'LNG'
+  | 'LPG'
+  | 'Methanol'
+  | 'Ammonia'
+  | 'Biofuel'
+  | 'B24'
+  | 'B100'
+  | 'HVO'
+  | 'Other'
 
 export type FuelReadinessStatus = 'not_started' | 'in_progress' | 'ready' | 'certified'
 
+export type ActivityType =
+  | 'case_created'
+  | 'case_status_changed'
+  | 'case_assigned'
+  | 'case_priority_changed'
+  | 'case_closed'
+  | 'document_uploaded'
+  | 'document_reviewed'
+  | 'extraction_complete'
+  | 'measurement_added'
+  | 'measurement_disputed'
+  | 'spec_check_added'
+  | 'spec_result_received'
+  | 'draft_created'
+  | 'draft_submitted'
+  | 'draft_approved'
+  | 'draft_sent'
+  | 'draft_superseded'
+  | 'delivery_reconciled'
+  | 'note_added'
+  | 'escalated'
+  | 'fuel_readiness_updated'
+
+export type AuditOperation = 'INSERT' | 'UPDATE' | 'DELETE'
+
 // ============================================================
-// ENTITIES
+// MASTER DATA ENTITIES
 // ============================================================
 
 export interface User {
@@ -69,6 +136,8 @@ export interface User {
   full_name: string
   role: UserRole
   avatar_url?: string
+  is_active: boolean
+  last_seen_at?: string
   created_at: string
   updated_at: string
 }
@@ -76,8 +145,12 @@ export interface User {
 export interface Company {
   id: string
   name: string
-  type: 'shipowner' | 'charterer' | 'supplier' | 'other'
+  type: CompanyType
   country: string
+  address?: string
+  website?: string
+  notes?: string
+  deleted_at?: string
   created_at: string
   updated_at: string
 }
@@ -90,6 +163,9 @@ export interface Contact {
   email: string
   phone?: string
   role: string
+  is_primary: boolean
+  notes?: string
+  deleted_at?: string
   created_at: string
   updated_at: string
 }
@@ -97,12 +173,20 @@ export interface Contact {
 export interface Vessel {
   id: string
   name: string
-  imo: string
+  imo?: string
+  mmsi?: string
+  call_sign?: string
   flag: string
-  type: string
-  dwt: number
+  vessel_type: string
+  dwt?: number
+  grt?: number
+  year_built?: number
   owner_id?: string
   owner?: Company
+  manager_id?: string
+  manager?: Company
+  notes?: string
+  deleted_at?: string
   created_at: string
   updated_at: string
 }
@@ -112,7 +196,9 @@ export interface Port {
   name: string
   country: string
   unlocode: string
+  region?: string
   timezone: string
+  notes?: string
   created_at: string
   updated_at: string
 }
@@ -121,29 +207,22 @@ export interface Supplier {
   id: string
   name: string
   country: string
+  license_number?: string
   contact_email?: string
+  contact_phone?: string
+  is_approved: boolean
+  approval_note?: string
+  notes?: string
+  deleted_at?: string
   created_at: string
   updated_at: string
 }
+
+// ============================================================
+// OPERATIONAL ENTITIES
+// ============================================================
 
 export interface Delivery {
-  id: string
-  vessel_id: string
-  vessel?: Vessel
-  port_id: string
-  port?: Port
-  supplier_id: string
-  supplier?: Supplier
-  fuel_type: FuelType
-  bdn_quantity: number
-  delivery_date: string
-  bdn_number: string
-  case_id?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface Case {
   id: string
   reference: string
   vessel_id: string
@@ -152,23 +231,70 @@ export interface Case {
   port?: Port
   supplier_id: string
   supplier?: Supplier
-  delivery_id?: string
-  delivery?: Delivery
   fuel_type: FuelType
+  status: DeliveryStatus
+
+  // BDN figures
+  bdn_number: string
+  bdn_quantity: number
+  bdn_density?: number
+
+  // Received figures
+  vessel_quantity?: number
+  mfm_quantity?: number
+
+  // Timing
+  delivery_date: string
+  commenced_at?: string
+  completed_at?: string
+
+  charter_party_ref?: string
+  nominated_by?: string
+
+  notes?: string
+  deleted_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Case {
+  id: string
+  reference: string
+  delivery_id: string
+  delivery?: Delivery
+
+  vessel_id: string
+  vessel?: Vessel
+  port_id: string
+  port?: Port
+  supplier_id: string
+  supplier?: Supplier
+  fuel_type: FuelType
+
   discrepancy_type: DiscrepancyType
   claimed_quantity?: number
   bdn_quantity?: number
+
   status: CaseStatus
-  priority: 'low' | 'normal' | 'high' | 'urgent'
+  priority: PriorityLevel
+
   assigned_to?: string
   assigned_user?: User
+  opened_by?: string
+  opened_at: string
+  closed_at?: string
+
   description: string
-  delivery_date: string
+  internal_notes?: string
+
+  deleted_at?: string
   created_at: string
   updated_at: string
+
+  // Populated via joins
   documents?: Document[]
   measurements?: Measurement[]
-  specs_checks?: SpecsCheck[]
+  spec_checks?: SpecCheck[]
   drafts?: Draft[]
   activities?: Activity[]
 }
@@ -176,26 +302,45 @@ export interface Case {
 export interface Document {
   id: string
   case_id: string
-  type: DocumentType
-  filename: string
-  file_url?: string
-  file_size?: number
-  status: DocumentStatus
+  delivery_id?: string
   uploaded_by?: string
   uploader?: User
-  extracted_fields?: ExtractedField[]
+
+  document_type: DocumentType
+  filename: string
+  storage_path: string
+  file_size_bytes?: number
+  mime_type?: string
+  checksum_sha256?: string
+
+  status: DocumentStatus
+  extraction_status: ExtractionStatus
+  source_description?: string
+
   notes?: string
+  deleted_at?: string
   created_at: string
   updated_at: string
+
+  extracted_fields?: ExtractedField[]
 }
 
 export interface ExtractedField {
   id: string
   document_id: string
+  case_id?: string
+
   field_name: string
   field_value: string
-  confidence?: number
-  needs_review: boolean
+  field_unit?: string
+  confidence_score?: number
+  page_number?: number
+
+  is_verified: boolean
+  verified_by?: string
+  verified_at?: string
+  override_value?: string
+
   created_at: string
   updated_at: string
 }
@@ -203,31 +348,58 @@ export interface ExtractedField {
 export interface Measurement {
   id: string
   case_id: string
-  source: 'vessel' | 'barge' | 'mfm' | 'shore'
-  fuel_type: FuelType
-  gross_quantity: number
-  net_quantity: number
-  temperature?: number
-  density?: number
+  delivery_id?: string
+  document_id?: string
+
+  source: MeasurementSource
+  fuel_grade: FuelType
+
+  quantity_mt: number
+
+  // Full correction chain (optional)
+  observed_volume_m3?: number
+  temperature_c?: number
+  density_at_obs_kgm3?: number
+  density_at_15c_kgm3?: number
   vcf?: number
-  trim_correction?: number
+  trim_correction_m3?: number
+  wedge_correction_m3?: number
+
+  timestamp_utc: string
+  surveyor_name?: string
+  surveyor_company?: string
+
+  is_disputed: boolean
+  dispute_reason?: string
+
   notes?: string
-  measured_by?: string
-  measured_at: string
+  created_by?: string
   created_at: string
   updated_at: string
 }
 
-export interface SpecsCheck {
+export interface SpecCheck {
   id: string
   case_id: string
-  parameter: string
+  document_id?: string
+
+  fuel_grade: FuelType
+  parameter_name: string
   unit: string
+
   bdn_value?: number | null
   contract_min?: number | null
   contract_max?: number | null
   lab_result?: number | null
+
   status: SpecStatus
+  deviation_pct?: number | null
+
+  lab_reference?: string
+  lab_date?: string
+  lab_name?: string
+
+  checked_by?: string
   notes?: string
   created_at: string
   updated_at: string
@@ -236,17 +408,32 @@ export interface SpecsCheck {
 export interface Draft {
   id: string
   case_id: string
-  type: DraftType
+  parent_draft_id?: string
+
+  draft_type: DraftType
   title: string
-  content: string
+  body: string
   status: DraftStatus
   version: number
+
+  // Approval chain
   created_by?: string
   creator?: User
+  submitted_for_review_at?: string
+  reviewed_by?: string
+  reviewer?: User
+  reviewed_at?: string
   approved_by?: string
   approver?: User
+  approved_at?: string
+  sent_by?: string
   sent_at?: string
-  sent_to?: string[]
+
+  recipient_name?: string
+  recipient_email?: string
+  sent_reference?: string
+
+  template_id?: string
   notes?: string
   created_at: string
   updated_at: string
@@ -255,28 +442,15 @@ export interface Draft {
 export interface Activity {
   id: string
   case_id: string
+  delivery_id?: string
   user_id?: string
   user?: User
-  action: string
+
+  activity_type: ActivityType
   description: string
   metadata?: Record<string, unknown>
-  created_at: string
-}
 
-export interface FuelReadinessRecord {
-  id: string
-  vessel_id: string
-  vessel?: Vessel
-  fuel_type: FuelType
-  status: FuelReadinessStatus
-  readiness_score: number
-  requirements: FuelRequirement[]
-  target_date?: string
-  certifying_body?: string
-  certificate_number?: string
-  notes?: string
   created_at: string
-  updated_at: string
 }
 
 export interface FuelRequirement {
@@ -285,11 +459,79 @@ export interface FuelRequirement {
   description: string
   completed: boolean
   due_date?: string
-  document_ref?: string
+  doc_ref?: string
+}
+
+export interface FuelReadinessRecord {
+  id: string
+  vessel_id: string
+  vessel?: Vessel
+  port_id?: string
+  port?: Port
+
+  fuel_type: FuelType
+  status: FuelReadinessStatus
+  readiness_score: number
+  requirements: FuelRequirement[]
+
+  target_date?: string
+  certifying_body?: string
+  certificate_ref?: string
+  certificate_expiry?: string
+
+  assessed_by?: string
+  assessed_at?: string
+  notes?: string
+
+  created_at: string
+  updated_at: string
+}
+
+export interface AuditLog {
+  id: string
+  user_id?: string
+  table_name: string
+  record_id: string
+  operation: AuditOperation
+  old_data?: Record<string, unknown>
+  new_data?: Record<string, unknown>
+  changed_fields?: string[]
+  ip_address?: string
+  user_agent?: string
+  created_at: string
 }
 
 // ============================================================
-// UI / VIEW TYPES
+// CONFIGURATION ENTITIES
+// ============================================================
+
+export interface Threshold {
+  id: string
+  category: 'spec' | 'quantity'
+  parameter: string
+  unit: string
+  warning_threshold: number
+  critical_threshold: number
+  fuel_type?: FuelType
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Template {
+  id: string
+  draft_type: DraftType
+  name: string
+  description?: string
+  body: string
+  is_active: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+// ============================================================
+// UI / VIEW TYPES (no DB backing)
 // ============================================================
 
 export interface KPIData {
@@ -301,28 +543,27 @@ export interface KPIData {
 }
 
 export interface ReconcilerRow {
-  fuel_type: FuelType
-  vessel_gross: number
-  vessel_net: number
-  barge_gross: number
-  barge_net: number
-  mfm_gross: number
-  mfm_net: number
-  difference_vessel_barge: number
-  difference_pct_vessel_barge: number
-  difference_vessel_mfm: number
-  difference_pct_vessel_mfm: number
+  fuel_grade: FuelType
+  vessel_mt?: number
+  barge_mt?: number
+  mfm_mt?: number
+  surveyor_mt?: number
+  bdn_mt: number
+  diff_vessel_barge?: number
+  diff_pct_vessel_barge?: number
+  diff_vessel_mfm?: number
+  diff_pct_vessel_mfm?: number
   variance_flag: 'ok' | 'amber' | 'red'
 }
 
 export interface SpecsRow {
-  parameter: string
+  parameter_name: string
   unit: string
   bdn_value: number | null
   contract_min: number | null
   contract_max: number | null
   lab_result: number | null
-  variance: number | null
+  deviation_pct: number | null
   status: SpecStatus
 }
 
@@ -332,9 +573,12 @@ export interface FilterState {
   port?: string
   fuel_type?: FuelType
   status?: CaseStatus
+  priority?: PriorityLevel
+  discrepancy_type?: DiscrepancyType
   date_from?: string
   date_to?: string
   search?: string
+  assigned_to?: string
 }
 
 export interface PaginationState {
@@ -359,19 +603,8 @@ export interface SelectOption {
   label: string
 }
 
-export interface Threshold {
-  id: string
-  parameter: string
-  unit: string
-  warning_threshold: number
-  critical_threshold: number
-}
-
-export interface Template {
-  id: string
-  type: DraftType
-  name: string
-  content: string
-  created_at: string
-  updated_at: string
-}
+// ── Legacy aliases for backward compat with existing page components ─────────
+/** @deprecated use SpecCheck */
+export type SpecsCheck = SpecCheck
+/** @deprecated use User */
+export type Profile = User

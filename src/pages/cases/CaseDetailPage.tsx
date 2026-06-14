@@ -74,7 +74,7 @@ export function CaseDetailPage() {
               <span className="text-slate-300">·</span>
               <FuelTypeBadge fuel={case_.fuel_type} />
               <span className="text-slate-300">·</span>
-              <span>{formatDate(case_.delivery_date)}</span>
+              <span>{formatDate(case_.delivery?.delivery_date ?? case_.opened_at)}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">

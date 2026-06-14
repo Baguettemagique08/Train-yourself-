@@ -225,7 +225,7 @@ function FuelSection({
                               description={req.description}
                               completed={req.completed}
                               dueDate={req.due_date}
-                              docRef={req.document_ref}
+                              docRef={req.doc_ref}
                             />
                           ))}
                         </div>
@@ -246,10 +246,10 @@ function FuelSection({
                             <span className="text-slate-500">Certifying Body</span>
                             <span className="font-medium text-slate-900">{record.certifying_body ?? '—'}</span>
                           </div>
-                          {record.certificate_number && (
+                          {record.certificate_ref && (
                             <div className="flex justify-between text-xs">
                               <span className="text-slate-500">Certificate No.</span>
-                              <span className="font-mono text-blue-600">{record.certificate_number}</span>
+                              <span className="font-mono text-blue-600">{record.certificate_ref}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-xs">

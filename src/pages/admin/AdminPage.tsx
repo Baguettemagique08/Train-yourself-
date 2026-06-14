@@ -99,10 +99,13 @@ function ThresholdsTab() {
   const [editValues, setEditValues] = useState<Partial<Threshold>>({})
   const [showAdd, setShowAdd] = useState(false)
   const [newThreshold, setNewThreshold] = useState<Omit<Threshold, 'id'>>({
+    category: 'quantity',
     parameter: '',
     unit: '',
     warning_threshold: 0,
     critical_threshold: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   })
 
   const startEdit = (t: Threshold) => {
@@ -132,7 +135,7 @@ function ThresholdsTab() {
     if (!newThreshold.parameter.trim()) return
     const id = `t-custom-${Date.now()}`
     setThresholds((prev) => [...prev, { id, ...newThreshold }])
-    setNewThreshold({ parameter: '', unit: '', warning_threshold: 0, critical_threshold: 0 })
+    setNewThreshold({ category: 'quantity', parameter: '', unit: '', warning_threshold: 0, critical_threshold: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     setShowAdd(false)
   }
 
@@ -346,14 +349,14 @@ function TemplatesTab() {
 
   const startEdit = (t: Template) => {
     setEditingId(t.id)
-    setEditContent(t.content)
+    setEditContent(t.body)
   }
 
   const saveEdit = () => {
     if (!editingId) return
     const now = new Date().toISOString()
     setTemplates((prev) =>
-      prev.map((t) => (t.id === editingId ? { ...t, content: editContent, updated_at: now } : t))
+      prev.map((t) => (t.id === editingId ? { ...t, body: editContent, updated_at: now } : t))
     )
     setEditingId(null)
     setEditContent('')
@@ -390,7 +393,7 @@ function TemplatesTab() {
                 <td className="px-4 py-3 font-medium text-slate-900">{t.name}</td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                    {typeLabel(t.type)}
+                    {typeLabel(t.draft_type)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.updated_at)}</td>

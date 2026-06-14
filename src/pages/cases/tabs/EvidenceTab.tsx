@@ -19,6 +19,7 @@ export function EvidenceTab({ caseId }: EvidenceTabProps) {
   }
 
   const statusConfig: Record<Document['status'], { icon: React.ReactNode; label: string; color: string }> = {
+    uploading: { icon: <Clock className="h-4 w-4 animate-pulse" />, label: 'Uploading', color: 'text-slate-500' },
     ready: { icon: <CheckCircle className="h-4 w-4" />, label: 'Ready', color: 'text-green-600' },
     needs_review: { icon: <AlertCircle className="h-4 w-4" />, label: 'Needs Review', color: 'text-amber-600' },
     processing: { icon: <Clock className="h-4 w-4 animate-pulse" />, label: 'Processing', color: 'text-blue-600' },
@@ -64,7 +65,7 @@ export function EvidenceTab({ caseId }: EvidenceTabProps) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 truncate">{doc.filename}</p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {documentTypeLabel(doc.type)} · {fileSizeLabel(doc.file_size)} · Uploaded {formatDateTime(doc.created_at)}
+                      {documentTypeLabel(doc.document_type)} · {fileSizeLabel(doc.file_size_bytes)} · Uploaded {formatDateTime(doc.created_at)}
                     </p>
                   </div>
 
@@ -100,17 +101,17 @@ export function EvidenceTab({ caseId }: EvidenceTabProps) {
                             <div
                               key={field.id}
                               className={`px-3 py-2 rounded-md border text-xs ${
-                                field.needs_review
+                                !field.is_verified
                                   ? 'border-amber-200 bg-amber-50'
                                   : 'border-slate-200 bg-white'
                               }`}
                             >
                               <div className="font-medium text-slate-500 truncate">{field.field_name}</div>
                               <div className="font-semibold text-slate-900 mt-0.5">{field.field_value}</div>
-                              {field.confidence !== undefined && (
+                              {field.confidence_score !== undefined && (
                                 <div className="text-slate-400 mt-0.5">
-                                  Confidence: {(field.confidence * 100).toFixed(0)}%
-                                  {field.needs_review && (
+                                  Confidence: {((field.confidence_score ?? 0) * 100).toFixed(0)}%
+                                  {!field.is_verified && (
                                     <span className="ml-2 text-amber-600 font-medium">· Review required</span>
                                   )}
                                 </div>

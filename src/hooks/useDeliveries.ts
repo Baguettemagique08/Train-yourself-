@@ -19,16 +19,16 @@ export function useReconcilerData(caseId: string) {
     const bargeMeas = bySource('barge')
     const mfmMeas = bySource('mfm')
 
-    const fuelTypes = [...new Set(measurements.map((m) => m.fuel_type))]
+    const fuelTypes = [...new Set(measurements.map((m) => m.fuel_grade))]
 
     return fuelTypes.map((fuel) => {
-      const vessel = vesselMeas.find((m) => m.fuel_type === fuel)
-      const barge = bargeMeas.find((m) => m.fuel_type === fuel)
-      const mfm = mfmMeas.find((m) => m.fuel_type === fuel)
+      const vessel = vesselMeas.find((m) => m.fuel_grade === fuel)
+      const barge = bargeMeas.find((m) => m.fuel_grade === fuel)
+      const mfm = mfmMeas.find((m) => m.fuel_grade === fuel)
 
-      const vesselQty = vessel?.net_quantity ?? null
-      const bargeQty = barge?.net_quantity ?? null
-      const mfmQty = mfm?.net_quantity ?? null
+      const vesselQty = vessel?.quantity_mt ?? null
+      const bargeQty = barge?.quantity_mt ?? null
+      const mfmQty = mfm?.quantity_mt ?? null
 
       const vbDiff = vesselQty !== null && bargeQty !== null ? vesselQty - bargeQty : null
       const vbPct = vbDiff !== null && bargeQty !== null ? (vbDiff / bargeQty) * 100 : null

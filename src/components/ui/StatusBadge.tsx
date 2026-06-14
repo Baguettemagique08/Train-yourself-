@@ -38,6 +38,7 @@ export function DraftStatusBadge({ status }: { status: DraftStatus }) {
     under_review: 'bg-amber-100 text-amber-700',
     approved: 'bg-blue-100 text-blue-700',
     sent: 'bg-green-100 text-green-700',
+    superseded: 'bg-slate-100 text-slate-400',
   }
   return <Badge className={colors[status]}>{draftStatusLabel(status)}</Badge>
 }

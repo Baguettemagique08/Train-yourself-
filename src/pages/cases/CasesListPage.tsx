@@ -99,7 +99,7 @@ export function CasesListPage() {
       key: 'delivery_date',
       header: 'Delivery',
       sortable: true,
-      cell: (row) => <span className="text-slate-500">{formatDate(row.delivery_date)}</span>,
+      cell: (row) => <span className="text-slate-500">{formatDate(row.delivery?.delivery_date ?? row.opened_at)}</span>,
     },
     {
       key: 'assigned_to',

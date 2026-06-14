@@ -112,7 +112,7 @@ function PctCell({ pct }: { pct: number | null }) {
 // ── Build initial rows from mock data ─────────────────────────────────────────
 function buildInitialRows(caseId: string): ReconcilerRowData[] {
   const measurements = mockMeasurements.filter((m) => m.case_id === caseId)
-  const fuelGrades = Array.from(new Set(measurements.map((m) => m.fuel_type)))
+  const fuelGrades = Array.from(new Set(measurements.map((m) => m.fuel_grade)))
 
   if (fuelGrades.length === 0) {
     return [
@@ -128,15 +128,15 @@ function buildInitialRows(caseId: string): ReconcilerRowData[] {
   }
 
   return fuelGrades.map((grade, idx) => {
-    const vessel = measurements.find((m) => m.source === 'vessel' && m.fuel_type === grade)
-    const barge = measurements.find((m) => m.source === 'barge' && m.fuel_type === grade)
-    const mfm = measurements.find((m) => m.source === 'mfm' && m.fuel_type === grade)
+    const vessel = measurements.find((m) => m.source === 'vessel' && m.fuel_grade === grade)
+    const barge = measurements.find((m) => m.source === 'barge' && m.fuel_grade === grade)
+    const mfm = measurements.find((m) => m.source === 'mfm' && m.fuel_grade === grade)
     return {
       id: `row-${caseId}-${idx}`,
       fuelGrade: grade,
-      vesselFigures: vessel ? String(vessel.net_quantity) : '',
-      bargeBdn: barge ? String(barge.net_quantity) : '',
-      mfmReading: mfm ? String(mfm.net_quantity) : '',
+      vesselFigures: vessel ? String(vessel.quantity_mt) : '',
+      bargeBdn: barge ? String(barge.quantity_mt) : '',
+      mfmReading: mfm ? String(mfm.quantity_mt) : '',
       flagged: false,
     }
   })
@@ -341,7 +341,7 @@ export default function ReconcilerPage() {
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Delivery Date</p>
                 <p className="text-sm font-semibold text-slate-900">
-                  {formatDate(selectedCase.delivery_date)}
+                  {formatDate(selectedCase.delivery?.delivery_date ?? selectedCase.opened_at)}
                 </p>
               </div>
               <div>
