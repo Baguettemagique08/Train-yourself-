@@ -1,295 +1,783 @@
-import { useState } from 'react'
-import { Settings, Users, FileText, Sliders, Edit, Plus, Check, X } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
-import { Tabs } from '@/components/ui/Tabs'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import { useState, useCallback } from 'react'
+import { Settings, Users, Shield, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { mockThresholds, mockTemplates, mockUsers } from '@/data/mockData'
+import { cn, formatDate, formatRelative } from '@/lib/utils'
 import { DRAFT_TYPE_OPTIONS } from '@/lib/constants'
-import type { TabDefinition, Threshold } from '@/types'
+import type { DraftType, Template, Threshold } from '@/types'
 
-const ADMIN_TABS: TabDefinition[] = [
-  { id: 'thresholds', label: 'Thresholds' },
-  { id: 'templates', label: 'Templates' },
-  { id: 'users', label: 'Users' },
-  { id: 'roles', label: 'Roles' },
+// ── Tab types ──────────────────────────────────────────────────────────────────
+type AdminTab = 'thresholds' | 'templates' | 'users' | 'roles'
+
+// ── Mock admin users (richer than mockUsers) ───────────────────────────────────
+const ADMIN_USERS = [
+  { id: 'u1', name: 'James Hargreaves', email: 'james.hargreaves@copemer.com', role: 'Senior Claims Handler', status: 'active', lastActive: '2026-06-14T08:30:00Z' },
+  { id: 'u2', name: 'Sophie Lindqvist', email: 'sophie.lindqvist@copemer.com', role: 'Claims Analyst', status: 'active', lastActive: '2026-06-13T17:05:00Z' },
+  { id: 'u3', name: 'Rajan Mehta', email: 'rajan.mehta@copemer.com', role: 'Operations Manager', status: 'active', lastActive: '2026-06-12T11:22:00Z' },
+  { id: 'u4', name: 'Olivia Le Blond', email: 'olivia.leblond@copemer.com', role: 'Compliance Officer', status: 'active', lastActive: '2026-06-14T09:15:00Z' },
 ]
 
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  admin: ['View all cases', 'Edit all cases', 'Approve drafts', 'Send communications', 'Manage users', 'Edit thresholds'],
-  senior_broker: ['View all cases', 'Edit all cases', 'Approve drafts', 'Send communications'],
-  broker: ['View all cases', 'Edit assigned cases', 'Create drafts'],
-  analyst: ['View all cases', 'Enter figures', 'Run specs checks', 'Create internal memos'],
-  readonly: ['View all cases'],
+// ── Roles data ─────────────────────────────────────────────────────────────────
+const ROLES = [
+  {
+    id: 'role-admin',
+    name: 'Admin',
+    description: 'Full system access including configuration, user management, and all case operations.',
+    permissions: ['Case Management', 'Document Upload', 'Draft Approve', 'Draft Send', 'Admin Settings', 'User Management', 'Role Management'],
+    userCount: 1,
+  },
+  {
+    id: 'role-senior',
+    name: 'Senior Claims Handler',
+    description: 'Full case operations, draft approval authority, and escalation management.',
+    permissions: ['Case Management', 'Document Upload', 'Draft Create', 'Draft Approve', 'Draft Send', 'Reconciler', 'Specs Checker'],
+    userCount: 1,
+  },
+  {
+    id: 'role-analyst',
+    name: 'Claims Analyst',
+    description: 'Case data entry, reconciliation, and draft creation. Cannot approve or send drafts.',
+    permissions: ['Case View', 'Document Upload', 'Draft Create', 'Reconciler', 'Specs Checker', 'Fuel Readiness'],
+    userCount: 1,
+  },
+  {
+    id: 'role-ops',
+    name: 'Operations Manager',
+    description: 'Operational oversight, reporting, and fleet readiness monitoring.',
+    permissions: ['Case View', 'Fuel Readiness', 'Reports', 'Dashboard'],
+    userCount: 1,
+  },
+  {
+    id: 'role-compliance',
+    name: 'Compliance Officer',
+    description: 'Compliance monitoring, specs checking, and regulatory reporting.',
+    permissions: ['Case View', 'Specs Checker', 'Fuel Readiness', 'Reports', 'Thresholds View'],
+    userCount: 1,
+  },
+  {
+    id: 'role-readonly',
+    name: 'Read Only',
+    description: 'View-only access to all non-sensitive case information.',
+    permissions: ['Case View', 'Dashboard'],
+    userCount: 0,
+  },
+]
+
+// ── Tab Button ─────────────────────────────────────────────────────────────────
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+        active
+          ? 'border-blue-600 text-blue-600'
+          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  )
 }
 
-export function AdminPage() {
-  const [activeTab, setActiveTab] = useState('thresholds')
-  const [editingThreshold, setEditingThreshold] = useState<string | null>(null)
-  const [thresholds, setThresholds] = useState(mockThresholds)
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: THRESHOLDS
+// ─────────────────────────────────────────────────────────────────────────────
+function ThresholdsTab() {
+  const [thresholds, setThresholds] = useState<Threshold[]>([...mockThresholds])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Partial<Threshold>>({})
+  const [showAdd, setShowAdd] = useState(false)
+  const [newThreshold, setNewThreshold] = useState<Omit<Threshold, 'id'>>({
+    parameter: '',
+    unit: '',
+    warning_threshold: 0,
+    critical_threshold: 0,
+  })
 
-  function saveThreshold(id: string, warning: number, critical: number) {
-    setThresholds((prev) => prev.map((t) => t.id === id
-      ? { ...t, warning_threshold: warning, critical_threshold: critical }
-      : t
-    ))
-    setEditingThreshold(null)
+  const startEdit = (t: Threshold) => {
+    setEditingId(t.id)
+    setEditValues({ ...t })
+  }
+
+  const saveEdit = () => {
+    if (!editingId) return
+    setThresholds((prev) =>
+      prev.map((t) => (t.id === editingId ? { ...t, ...editValues } : t))
+    )
+    setEditingId(null)
+    setEditValues({})
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditValues({})
+  }
+
+  const deleteThreshold = (id: string) => {
+    setThresholds((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  const addThreshold = () => {
+    if (!newThreshold.parameter.trim()) return
+    const id = `t-custom-${Date.now()}`
+    setThresholds((prev) => [...prev, { id, ...newThreshold }])
+    setNewThreshold({ parameter: '', unit: '', warning_threshold: 0, critical_threshold: 0 })
+    setShowAdd(false)
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <Settings className="h-6 w-6 text-slate-400" />
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Administration</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Manage thresholds, templates, users, and role permissions</p>
+          <h2 className="text-sm font-semibold text-slate-900">Variance &amp; Specification Thresholds</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Configure warning and critical thresholds used in reconciliation and spec analysis.
+          </p>
         </div>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Add Threshold
+        </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="px-5">
-          <Tabs tabs={ADMIN_TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              {['Parameter', 'Warning Threshold', 'Critical Threshold', 'Unit', 'Actions'].map((h) => (
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {thresholds.map((t) => {
+              const isEditing = editingId === t.id
+              return (
+                <tr key={t.id} className={cn('hover:bg-slate-50 transition-colors', isEditing && 'bg-blue-50')}>
+                  {/* Parameter */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        className="w-56 rounded border border-slate-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                        value={editValues.parameter ?? ''}
+                        onChange={(e) => setEditValues((v) => ({ ...v, parameter: e.target.value }))}
+                      />
+                    ) : (
+                      <span className="font-medium text-slate-900">{t.parameter}</span>
+                    )}
+                  </td>
+
+                  {/* Warning */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="any"
+                        className="w-24 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-sm focus:border-amber-500 focus:outline-none"
+                        value={editValues.warning_threshold ?? ''}
+                        onChange={(e) => setEditValues((v) => ({ ...v, warning_threshold: parseFloat(e.target.value) || 0 }))}
+                      />
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        {t.warning_threshold}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Critical */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="any"
+                        className="w-24 rounded border border-red-300 bg-red-50 px-2 py-1 text-sm focus:border-red-500 focus:outline-none"
+                        value={editValues.critical_threshold ?? ''}
+                        onChange={(e) => setEditValues((v) => ({ ...v, critical_threshold: parseFloat(e.target.value) || 0 }))}
+                      />
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                        {t.critical_threshold}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Unit */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                        value={editValues.unit ?? ''}
+                        onChange={(e) => setEditValues((v) => ({ ...v, unit: e.target.value }))}
+                      />
+                    ) : (
+                      <span className="text-slate-500">{t.unit}</span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={saveEdit}
+                          className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                        >
+                          <Check className="h-3 w-3" /> Save
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <X className="h-3 w-3" /> Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => startEdit(t)}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <Edit2 className="h-3 w-3" /> Edit
+                        </button>
+                        <button
+                          onClick={() => deleteThreshold(t.id)}
+                          className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+
+            {/* Add new threshold row */}
+            {showAdd && (
+              <tr className="bg-green-50">
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    placeholder="Parameter name"
+                    className="w-56 rounded border border-slate-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                    value={newThreshold.parameter}
+                    onChange={(e) => setNewThreshold((v) => ({ ...v, parameter: e.target.value }))}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="0"
+                    className="w-24 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-sm focus:outline-none"
+                    value={newThreshold.warning_threshold || ''}
+                    onChange={(e) => setNewThreshold((v) => ({ ...v, warning_threshold: parseFloat(e.target.value) || 0 }))}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="0"
+                    className="w-24 rounded border border-red-300 bg-red-50 px-2 py-1 text-sm focus:outline-none"
+                    value={newThreshold.critical_threshold || ''}
+                    onChange={(e) => setNewThreshold((v) => ({ ...v, critical_threshold: parseFloat(e.target.value) || 0 }))}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    placeholder="unit"
+                    className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm focus:outline-none"
+                    value={newThreshold.unit}
+                    onChange={(e) => setNewThreshold((v) => ({ ...v, unit: e.target.value }))}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={addThreshold}
+                      className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                    >
+                      <Check className="h-3 w-3" /> Add
+                    </button>
+                    <button
+                      onClick={() => setShowAdd(false)}
+                      className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: TEMPLATES
+// ─────────────────────────────────────────────────────────────────────────────
+function TemplatesTab() {
+  const [templates, setTemplates] = useState<Template[]>([...mockTemplates])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+
+  const startEdit = (t: Template) => {
+    setEditingId(t.id)
+    setEditContent(t.content)
+  }
+
+  const saveEdit = () => {
+    if (!editingId) return
+    const now = new Date().toISOString()
+    setTemplates((prev) =>
+      prev.map((t) => (t.id === editingId ? { ...t, content: editContent, updated_at: now } : t))
+    )
+    setEditingId(null)
+    setEditContent('')
+  }
+
+  const typeLabel = (type: DraftType): string => {
+    return DRAFT_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-900">Communication Templates</h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Manage draft templates used in the Drafting Center when creating new communications.
+        </p>
+      </div>
+
+      {/* Template List */}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              {['Template Name', 'Draft Type', 'Last Modified', 'Status', 'Actions'].map((h) => (
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {templates.map((t) => (
+              <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-900">{t.name}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                    {typeLabel(t.type)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(t.updated_at)}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                    Active
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => startEdit(t)}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <Edit2 className="h-3 w-3" /> Edit Template
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Template Editor Modal */}
+      {editingId && (() => {
+        const template = templates.find((t) => t.id === editingId)
+        if (!template) return null
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900">Edit Template</h2>
+                  <p className="text-xs text-slate-500">{template.name}</p>
+                </div>
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="rounded-md border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <textarea
+                  className="w-full h-96 rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                />
+              </div>
+              <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  Save Template
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: USERS
+// ─────────────────────────────────────────────────────────────────────────────
+function UsersTab() {
+  type AdminUser = typeof ADMIN_USERS[0] & { status: 'active' | 'inactive' }
+  const [users, setUsers] = useState<AdminUser[]>(ADMIN_USERS as AdminUser[])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editRole, setEditRole] = useState('')
+  const [showInvite, setShowInvite] = useState(false)
+
+  const toggleStatus = (id: string) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
+      )
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">User Management</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Manage platform users, roles, and access.</p>
+        </div>
+        <button
+          onClick={() => setShowInvite(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Invite User
+        </button>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              {['Name', 'Email', 'Role', 'Status', 'Last Active', 'Actions'].map((h) => (
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {users.map((user) => {
+              const isEditing = editingId === user.id
+              return (
+                <tr key={user.id} className={cn('hover:bg-slate-50 transition-colors', isEditing && 'bg-blue-50')}>
+                  {/* Name */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                        {user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <span className="font-semibold text-slate-900">{user.name}</span>
+                    </div>
+                  </td>
+
+                  {/* Email */}
+                  <td className="px-4 py-3 text-slate-500 text-xs">{user.email}</td>
+
+                  {/* Role */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <select
+                        className="rounded border border-slate-300 bg-white px-2 py-1 text-sm focus:outline-none"
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                      >
+                        {ROLES.map((r) => (
+                          <option key={r.id} value={r.name}>{r.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {user.role}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold',
+                      user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                    )}>
+                      {user.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+
+                  {/* Last Active */}
+                  <td className="px-4 py-3 text-slate-500 text-xs">{formatRelative(user.lastActive)}</td>
+
+                  {/* Actions */}
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setUsers((prev) =>
+                              prev.map((u) => (u.id === user.id ? { ...u, role: editRole } : u))
+                            )
+                            setEditingId(null)
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                        >
+                          <Check className="h-3 w-3" /> Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setEditingId(user.id); setEditRole(user.role) }}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <Edit2 className="h-3 w-3" /> Edit
+                        </button>
+                        <button
+                          onClick={() => toggleStatus(user.id)}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
+                            user.status === 'active'
+                              ? 'border-red-200 text-red-600 hover:bg-red-50'
+                              : 'border-green-200 text-green-600 hover:bg-green-50'
+                          )}
+                        >
+                          {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Invite User Modal */}
+      {showInvite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <div className="px-6 py-5 border-b border-slate-100">
+              <h2 className="text-base font-semibold text-slate-900">Invite User</h2>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Full Name</label>
+                <input type="text" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Jane Smith" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                <input type="email" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="jane.smith@copemer.com" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+                <select className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                  {ROLES.map((r) => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowInvite(false)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowInvite(false)}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              >
+                Send Invitation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB: ROLES
+// ─────────────────────────────────────────────────────────────────────────────
+function RolesTab() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-900">Roles &amp; Permissions</h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Platform roles define what actions users can perform. Contact your administrator to modify role permissions.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              {['Role Name', 'Description', 'Permissions', 'Users'].map((h) => (
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {ROLES.map((role) => (
+              <tr key={role.id} className="hover:bg-slate-50 transition-colors align-top">
+                {/* Role Name */}
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span className="font-semibold text-slate-900">{role.name}</span>
+                  </div>
+                </td>
+
+                {/* Description */}
+                <td className="px-4 py-4 text-slate-500 text-xs max-w-xs">
+                  {role.description}
+                </td>
+
+                {/* Permissions */}
+                <td className="px-4 py-4">
+                  <div className="flex flex-wrap gap-1">
+                    {role.permissions.map((perm) => (
+                      <span
+                        key={perm}
+                        className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-100"
+                      >
+                        {perm}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+
+                {/* Users Count */}
+                <td className="px-4 py-4">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                    <Users className="h-3 w-3" />
+                    {role.userCount}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<AdminTab>('thresholds')
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
+
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Administration</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Configure platform settings, thresholds, templates, users, and roles.
+          </p>
         </div>
 
-        <div className="p-5">
-          {activeTab === 'thresholds' && (
-            <ThresholdsTab
-              thresholds={thresholds}
-              editingId={editingThreshold}
-              onEdit={setEditingThreshold}
-              onSave={saveThreshold}
-              onCancel={() => setEditingThreshold(null)}
+        {/* Tabs */}
+        <div className="border-b border-slate-200 bg-white rounded-t-lg px-4">
+          <div className="flex overflow-x-auto">
+            <TabButton
+              active={activeTab === 'thresholds'}
+              onClick={() => setActiveTab('thresholds')}
+              icon={<Settings className="h-4 w-4" />}
+              label="Thresholds"
             />
-          )}
+            <TabButton
+              active={activeTab === 'templates'}
+              onClick={() => setActiveTab('templates')}
+              icon={<Settings className="h-4 w-4" />}
+              label="Templates"
+            />
+            <TabButton
+              active={activeTab === 'users'}
+              onClick={() => setActiveTab('users')}
+              icon={<Users className="h-4 w-4" />}
+              label="Users"
+            />
+            <TabButton
+              active={activeTab === 'roles'}
+              onClick={() => setActiveTab('roles')}
+              icon={<Shield className="h-4 w-4" />}
+              label="Roles"
+            />
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="rounded-b-lg">
+          {activeTab === 'thresholds' && <ThresholdsTab />}
           {activeTab === 'templates' && <TemplatesTab />}
           {activeTab === 'users' && <UsersTab />}
           {activeTab === 'roles' && <RolesTab />}
         </div>
-      </div>
-    </div>
-  )
-}
-
-function ThresholdsTab({
-  thresholds, editingId, onEdit, onSave, onCancel,
-}: {
-  thresholds: Threshold[]
-  editingId: string | null
-  onEdit: (id: string) => void
-  onSave: (id: string, w: number, c: number) => void
-  onCancel: () => void
-}) {
-  const [warnVal, setWarnVal] = useState('')
-  const [critVal, setCritVal] = useState('')
-
-  function startEdit(t: Threshold) {
-    setWarnVal(t.warning_threshold.toString())
-    setCritVal(t.critical_threshold.toString())
-    onEdit(t.id)
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Variance & Quality Thresholds</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Define when discrepancies trigger warnings and critical flags</p>
-        </div>
-      </div>
-      <div className="table-container">
-        <table className="table-base">
-          <thead className="table-head">
-            <tr>
-              <th className="table-th">Parameter</th>
-              <th className="table-th text-right">Unit</th>
-              <th className="table-th text-right">Warning Threshold</th>
-              <th className="table-th text-right">Critical Threshold</th>
-              <th className="table-th w-24" />
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-100">
-            {thresholds.map((t) => (
-              <tr key={t.id} className={editingId === t.id ? 'bg-blue-50' : 'table-row'}>
-                <td className="table-td font-medium">{t.parameter}</td>
-                <td className="table-td text-right text-slate-400">{t.unit}</td>
-                <td className="table-td text-right">
-                  {editingId === t.id ? (
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-input text-right w-28 py-1 text-sm"
-                      value={warnVal}
-                      onChange={(e) => setWarnVal(e.target.value)}
-                    />
-                  ) : (
-                    <span className="font-mono text-amber-700 font-medium">{t.warning_threshold}</span>
-                  )}
-                </td>
-                <td className="table-td text-right">
-                  {editingId === t.id ? (
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-input text-right w-28 py-1 text-sm"
-                      value={critVal}
-                      onChange={(e) => setCritVal(e.target.value)}
-                    />
-                  ) : (
-                    <span className="font-mono text-red-700 font-medium">{t.critical_threshold}</span>
-                  )}
-                </td>
-                <td className="table-td">
-                  {editingId === t.id ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => onSave(t.id, parseFloat(warnVal), parseFloat(critVal))}
-                        className="text-green-600 hover:text-green-800 p-1"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button onClick={onCancel} className="text-slate-400 hover:text-red-600 p-1">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => startEdit(t)}
-                      className="text-slate-400 hover:text-blue-600 p-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function TemplatesTab() {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Draft Templates</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Manage standard templates for each communication type</p>
-        </div>
-        <Button size="sm"><Plus className="h-3.5 w-3.5" /> New Template</Button>
-      </div>
-      <div className="space-y-3">
-        {mockTemplates.map((tmpl) => {
-          const typeLabel = DRAFT_TYPE_OPTIONS.find((o) => o.value === tmpl.type)?.label ?? tmpl.type
-          return (
-            <div key={tmpl.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors">
-              <div className="flex items-start gap-3">
-                <FileText className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{tmpl.name}</p>
-                  <Badge className="bg-slate-100 text-slate-600 mt-1">{typeLabel}</Badge>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary">Preview</Button>
-                <Button size="sm" variant="secondary"><Edit className="h-3.5 w-3.5" /></Button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function UsersTab() {
-  const roleColors: Record<string, string> = {
-    admin: 'bg-purple-100 text-purple-700',
-    senior_broker: 'bg-blue-100 text-blue-700',
-    broker: 'bg-slate-100 text-slate-700',
-    analyst: 'bg-teal-100 text-teal-700',
-    readonly: 'bg-slate-50 text-slate-400',
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">User Management</h3>
-          <p className="text-xs text-slate-500 mt-0.5">{mockUsers.length} active users</p>
-        </div>
-        <Button size="sm"><Plus className="h-3.5 w-3.5" /> Invite User</Button>
-      </div>
-      <div className="table-container">
-        <table className="table-base">
-          <thead className="table-head">
-            <tr>
-              <th className="table-th">User</th>
-              <th className="table-th">Email</th>
-              <th className="table-th">Role</th>
-              <th className="table-th">Member Since</th>
-              <th className="table-th w-20" />
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-100">
-            {mockUsers.map((u) => (
-              <tr key={u.id} className="table-row">
-                <td className="table-td">
-                  <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-full bg-blue-700 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-white">
-                        {u.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                      </span>
-                    </div>
-                    <span className="font-medium text-slate-900">{u.full_name}</span>
-                  </div>
-                </td>
-                <td className="table-td text-slate-500">{u.email}</td>
-                <td className="table-td">
-                  <Badge className={roleColors[u.role] ?? 'bg-slate-100 text-slate-600'}>
-                    {u.role.replace('_', ' ')}
-                  </Badge>
-                </td>
-                <td className="table-td text-slate-400">
-                  {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </td>
-                <td className="table-td">
-                  <Button size="sm" variant="ghost"><Edit className="h-3.5 w-3.5" /></Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function RolesTab() {
-  return (
-    <div>
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">Role Permissions</h3>
-        <p className="text-xs text-slate-500 mt-0.5">Permissions granted to each role</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(ROLE_PERMISSIONS).map(([role, perms]) => (
-          <Card key={role}>
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-slate-400" />
-              <h4 className="text-sm font-semibold text-slate-900 capitalize">{role.replace('_', ' ')}</h4>
-            </div>
-            <ul className="space-y-1.5">
-              {perms.map((perm) => (
-                <li key={perm} className="flex items-center gap-2 text-xs text-slate-700">
-                  <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
-                  {perm}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        ))}
       </div>
     </div>
   )

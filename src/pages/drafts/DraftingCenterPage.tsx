@@ -1,267 +1,542 @@
-import { useState } from 'react'
-import { FileText, Plus, Clock, CheckCircle, Send, Search } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { DraftStatusBadge } from '@/components/ui/StatusBadge'
-import { Modal } from '@/components/ui/Modal'
-import { SelectField, Textarea, Input } from '@/components/ui/FormField'
+import { useState, useCallback, useMemo } from 'react'
+import {
+  Plus,
+  Save,
+  Send,
+  CheckCircle,
+  Clock,
+  FileText,
+  ChevronDown,
+  Edit2,
+  History,
+} from 'lucide-react'
 import { mockDrafts, mockCases, mockTemplates } from '@/data/mockData'
-import { formatDateTime, formatRelative } from '@/lib/utils'
+import { cn, formatDateTime, formatRelative, draftStatusLabel } from '@/lib/utils'
+import type { Draft, DraftType, DraftStatus } from '@/types'
 import { DRAFT_TYPE_OPTIONS } from '@/lib/constants'
-import type { Draft, DraftType } from '@/types'
 
-export function DraftingCenterPage() {
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [selectedId, setSelectedId] = useState<string>(mockDrafts[0]?.id ?? '')
-  const [showNew, setShowNew] = useState(false)
-  const [editMode, setEditMode] = useState(false)
-  const [editContent, setEditContent] = useState('')
+// ── Constants ──────────────────────────────────────────────────────────────────
+const DRAFT_TYPE_LABELS: Record<DraftType, string> = {
+  LOP_Response: 'LOP Response',
+  Owner_Update: 'Owner Update',
+  Charterer_Notice: 'Charterer Notice',
+  Internal_Memo: 'Internal Memo',
+  Claim_Letter: 'Claim Letter',
+  Protest_Letter: 'Protest Letter',
+}
 
-  const filtered = mockDrafts.filter((d) => {
-    if (search && !d.title.toLowerCase().includes(search.toLowerCase())) return false
-    if (typeFilter && d.type !== typeFilter) return false
-    if (statusFilter && d.status !== statusFilter) return false
-    return true
-  })
+const STATUS_COLORS: Record<DraftStatus, string> = {
+  draft: 'bg-slate-100 text-slate-600',
+  under_review: 'bg-amber-100 text-amber-700',
+  approved: 'bg-green-100 text-green-700',
+  sent: 'bg-blue-100 text-blue-700',
+}
 
-  const activeDraft = filtered.find((d) => d.id === selectedId) ?? filtered[0] ?? null
+const TYPE_COLORS: Record<DraftType, string> = {
+  LOP_Response: 'bg-indigo-100 text-indigo-700',
+  Owner_Update: 'bg-sky-100 text-sky-700',
+  Charterer_Notice: 'bg-violet-100 text-violet-700',
+  Internal_Memo: 'bg-slate-100 text-slate-600',
+  Claim_Letter: 'bg-orange-100 text-orange-700',
+  Protest_Letter: 'bg-red-100 text-red-700',
+}
 
-  function startEdit(draft: Draft) {
-    setEditContent(draft.content)
-    setEditMode(true)
+type FilterTab = 'all' | DraftType
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function wordCount(text: string): number {
+  return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+}
+
+function StatusBadge({ status }: { status: DraftStatus }) {
+  return (
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold', STATUS_COLORS[status])}>
+      {status === 'draft' && <Clock className="h-2.5 w-2.5" />}
+      {status === 'under_review' && <Clock className="h-2.5 w-2.5" />}
+      {status === 'approved' && <CheckCircle className="h-2.5 w-2.5" />}
+      {status === 'sent' && <Send className="h-2.5 w-2.5" />}
+      {draftStatusLabel(status)}
+    </span>
+  )
+}
+
+function TypeBadge({ type }: { type: DraftType }) {
+  return (
+    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', TYPE_COLORS[type])}>
+      {DRAFT_TYPE_LABELS[type]}
+    </span>
+  )
+}
+
+// ── New Draft Modal ────────────────────────────────────────────────────────────
+interface NewDraftModalProps {
+  onClose: () => void
+  onCreate: (draft: Draft) => void
+}
+
+function NewDraftModal({ onClose, onCreate }: NewDraftModalProps) {
+  const [draftType, setDraftType] = useState<DraftType>('LOP_Response')
+  const [title, setTitle] = useState('')
+  const [caseId, setCaseId] = useState('')
+  const [templateId, setTemplateId] = useState('')
+
+  const availableTemplates = mockTemplates.filter((t) => t.type === draftType)
+
+  const handleCreate = () => {
+    if (!title.trim()) return
+    const template = mockTemplates.find((t) => t.id === templateId)
+    const linkedCase = mockCases.find((c) => c.id === caseId)
+
+    const now = new Date().toISOString()
+    const newDraft: Draft = {
+      id: `dr-new-${Date.now()}`,
+      case_id: caseId || 'c1',
+      type: draftType,
+      title: title.trim(),
+      content: template?.content ?? '',
+      status: 'draft',
+      version: 1,
+      created_by: 'u4',
+      notes: linkedCase ? `Linked to case ${linkedCase.reference}` : '',
+      created_at: now,
+      updated_at: now,
+    }
+    onCreate(newDraft)
+    onClose()
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">Drafting Center</h2>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Create and manage LOPs, owner updates, claim letters, and internal communications
-          </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <div className="px-6 py-5 border-b border-slate-100">
+          <h2 className="text-base font-semibold text-slate-900">New Draft</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Create a new communication draft</p>
         </div>
-        <Button onClick={() => setShowNew(true)}>
-          <Plus className="h-4 w-4" /> New Draft
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5" style={{ minHeight: '70vh' }}>
-        {/* Drafts list */}
-        <div className="space-y-3">
-          {/* Search & filter */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                className="form-input pl-9"
-                placeholder="Search drafts…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                className="form-select text-xs"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All types</option>
-                {DRAFT_TYPE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-              <select
-                className="form-select text-xs"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All statuses</option>
-                <option value="draft">Draft</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="sent">Sent</option>
-              </select>
-            </div>
+        <div className="px-6 py-5 space-y-4">
+          {/* Draft Type */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Draft Type</label>
+            <select
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={draftType}
+              onChange={(e) => { setDraftType(e.target.value as DraftType); setTemplateId('') }}
+            >
+              {DRAFT_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Draft cards */}
-          <div className="space-y-2">
-            {filtered.length === 0 ? (
-              <p className="text-sm text-slate-400 py-6 text-center">No drafts match filters</p>
-            ) : (
-              filtered.map((d) => (
-                <div
-                  key={d.id}
-                  className={`p-3.5 rounded-lg border cursor-pointer transition-colors ${
-                    activeDraft?.id === d.id
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                  onClick={() => { setSelectedId(d.id); setEditMode(false) }}
-                >
-                  <div className="flex items-start gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-slate-900 leading-snug line-clamp-2">{d.title}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <DraftStatusBadge status={d.status} />
-                    <span className="text-xs text-slate-400">{formatRelative(d.updated_at)}</span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">{d.type.replace(/_/g, ' ')} · v{d.version}</p>
-                </div>
-              ))
-            )}
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Title</label>
+            <input
+              type="text"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. LOP Response — MV Nordic Star — Rotterdam"
+            />
+          </div>
+
+          {/* Link to Case */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Link to Case (optional)</label>
+            <select
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={caseId}
+              onChange={(e) => setCaseId(e.target.value)}
+            >
+              <option value="">— No case —</option>
+              {mockCases.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.reference} — {c.vessel?.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Template Selector */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Template (optional)</label>
+            <select
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+            >
+              <option value="">— Blank —</option>
+              {availableTemplates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
           </div>
         </div>
-
-        {/* Draft editor panel */}
-        {activeDraft ? (
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 leading-snug">{activeDraft.title}</h3>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    <DraftStatusBadge status={activeDraft.status} />
-                    <span className="text-xs text-slate-400">Version {activeDraft.version}</span>
-                    <span className="text-xs text-slate-400">·</span>
-                    <span className="text-xs text-slate-400">{activeDraft.creator?.full_name}</span>
-                    <span className="text-xs text-slate-400">·</span>
-                    <span className="text-xs text-slate-400">{formatDateTime(activeDraft.updated_at)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {activeDraft.status === 'draft' && (
-                    <>
-                      {!editMode ? (
-                        <Button size="sm" variant="secondary" onClick={() => startEdit(activeDraft)}>Edit</Button>
-                      ) : (
-                        <Button size="sm" onClick={() => setEditMode(false)}>Save</Button>
-                      )}
-                      <Button size="sm" variant="secondary">Submit for Review</Button>
-                    </>
-                  )}
-                  {activeDraft.status === 'under_review' && (
-                    <>
-                      <Button size="sm" variant="secondary">Request Changes</Button>
-                      <Button size="sm">Approve</Button>
-                    </>
-                  )}
-                  {activeDraft.status === 'approved' && (
-                    <Button size="sm">
-                      <Send className="h-3.5 w-3.5" /> Send
-                    </Button>
-                  )}
-                  {activeDraft.status === 'sent' && (
-                    <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-                      <CheckCircle className="h-4 w-4" />
-                      Sent {activeDraft.sent_at ? formatDateTime(activeDraft.sent_at) : ''}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Linked case */}
-            {(() => {
-              const linkedCase = mockCases.find((c) => c.id === activeDraft.case_id)
-              return linkedCase ? (
-                <div className="px-5 py-2 border-b border-slate-100 bg-blue-50 flex items-center gap-2 text-xs text-blue-700">
-                  <span className="font-medium">Linked case:</span>
-                  <span className="font-mono font-semibold">{linkedCase.reference}</span>
-                  <span>·</span>
-                  <span>{linkedCase.vessel?.name}</span>
-                  <span>·</span>
-                  <span>{linkedCase.port?.name}</span>
-                </div>
-              ) : null
-            })()}
-
-            {/* Content */}
-            <div className="flex-1 p-5">
-              {editMode ? (
-                <textarea
-                  className="w-full h-full min-h-96 text-xs font-mono text-slate-800 bg-white border border-slate-200 rounded-lg p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                />
-              ) : (
-                <pre className="text-xs font-mono text-slate-800 whitespace-pre-wrap leading-relaxed">
-                  {activeDraft.content}
-                </pre>
-              )}
-            </div>
-
-            {/* Sent to */}
-            {activeDraft.sent_to && activeDraft.sent_to.length > 0 && (
-              <div className="px-5 py-2.5 border-t border-slate-100 bg-green-50 flex items-center gap-2 text-xs text-green-700">
-                <Send className="h-3.5 w-3.5" />
-                <span>Sent to: {activeDraft.sent_to.join(', ')}</span>
-              </div>
-            )}
-
-            {/* Notes */}
-            {activeDraft.notes && (
-              <div className="px-5 py-2.5 border-t border-slate-100 bg-amber-50 text-xs text-amber-700 flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5" />
-                {activeDraft.notes}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400">
-            <div className="text-center">
-              <FileText className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">Select a draft to view</p>
-            </div>
-          </div>
-        )}
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!title.trim()}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Create Draft
+          </button>
+        </div>
       </div>
-
-      <NewDraftModal open={showNew} onClose={() => setShowNew(false)} />
     </div>
   )
 }
 
-function NewDraftModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [selectedType, setSelectedType] = useState<DraftType>('LOP_Response')
-  const template = mockTemplates.find((t) => t.type === selectedType)
+// ── Page ───────────────────────────────────────────────────────────────────────
+export default function DraftingCenterPage() {
+  const [drafts, setDrafts] = useState<Draft[]>([...mockDrafts])
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(mockDrafts[0]?.id ?? null)
+  const [filterTab, setFilterTab] = useState<FilterTab>('all')
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const selectedDraft = drafts.find((d) => d.id === selectedDraftId) ?? null
+
+  const filteredDrafts = useMemo(() => {
+    if (filterTab === 'all') return drafts
+    return drafts.filter((d) => d.type === filterTab)
+  }, [drafts, filterTab])
+
+  const updateDraftField = useCallback(
+    (field: keyof Draft, value: string) => {
+      if (!selectedDraftId) return
+      const now = new Date().toISOString()
+      setDrafts((prev) =>
+        prev.map((d) =>
+          d.id === selectedDraftId ? { ...d, [field]: value, updated_at: now } : d
+        )
+      )
+      setSaved(false)
+    },
+    [selectedDraftId]
+  )
+
+  const handleSave = useCallback(() => {
+    if (!selectedDraftId) return
+    const now = new Date().toISOString()
+    setDrafts((prev) =>
+      prev.map((d) => (d.id === selectedDraftId ? { ...d, updated_at: now } : d))
+    )
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }, [selectedDraftId])
+
+  const handleStatusChange = useCallback(
+    (newStatus: DraftStatus) => {
+      if (!selectedDraftId) return
+      const now = new Date().toISOString()
+      setDrafts((prev) =>
+        prev.map((d) =>
+          d.id === selectedDraftId
+            ? {
+                ...d,
+                status: newStatus,
+                updated_at: now,
+                ...(newStatus === 'sent' ? { sent_at: now } : {}),
+              }
+            : d
+        )
+      )
+    },
+    [selectedDraftId]
+  )
+
+  const handleCreateDraft = useCallback((newDraft: Draft) => {
+    setDrafts((prev) => [newDraft, ...prev])
+    setSelectedDraftId(newDraft.id)
+  }, [])
+
+  const FILTER_TABS: { id: FilterTab; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'LOP_Response', label: 'LOP Response' },
+    { id: 'Owner_Update', label: 'Owner Update' },
+    { id: 'Charterer_Notice', label: 'Charterer Notice' },
+    { id: 'Internal_Memo', label: 'Internal Memo' },
+    { id: 'Claim_Letter', label: 'Claim Letter' },
+    { id: 'Protest_Letter', label: 'Protest Letter' },
+  ]
+
+  // Mock version history entries
+  const versionHistory = selectedDraft
+    ? [
+        { version: selectedDraft.version, date: selectedDraft.updated_at, user: selectedDraft.creator?.full_name ?? 'Unknown', note: 'Current version' },
+        ...(selectedDraft.version > 1
+          ? [{ version: selectedDraft.version - 1, date: selectedDraft.created_at, user: selectedDraft.creator?.full_name ?? 'Unknown', note: 'Initial draft' }]
+          : []),
+      ]
+    : []
 
   return (
-    <Modal open={open} onClose={onClose} title="New Draft" size="xl"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={onClose}>Save Draft</Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <SelectField
-            label="Draft Type"
-            options={DRAFT_TYPE_OPTIONS}
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as DraftType)}
-          />
-          <SelectField
-            label="Linked Case"
-            options={mockCases.map((c) => ({ value: c.id, label: `${c.reference} — ${c.vessel?.name}` }))}
-            placeholder="Select case (optional)"
-          />
-        </div>
-        <Input label="Title" defaultValue="" placeholder="Draft title" required />
-        <Textarea
-          label="Content"
-          rows={20}
-          className="font-mono text-xs"
-          defaultValue={template?.content ?? ''}
-          hint="Complete all fields marked in [brackets] before saving."
+    <>
+      {showNewModal && (
+        <NewDraftModal
+          onClose={() => setShowNewModal(false)}
+          onCreate={handleCreateDraft}
         />
+      )}
+
+      <div className="flex h-screen bg-slate-50 overflow-hidden">
+        {/* ── LEFT PANEL ──────────────────────────────────────────────────── */}
+        <div className="w-80 shrink-0 flex flex-col border-r border-slate-200 bg-white">
+          {/* Header */}
+          <div className="px-4 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between mb-1">
+              <h1 className="text-base font-bold text-slate-900">Drafting Center</h1>
+            </div>
+            <p className="text-xs text-slate-500">
+              Create, review, and manage formal communications.
+            </p>
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Draft
+            </button>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="px-3 py-2 border-b border-slate-100 space-y-0.5 overflow-y-auto max-h-48">
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterTab(tab.id)}
+                className={cn(
+                  'w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                  filterTab === tab.id
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-600 hover:bg-slate-50'
+                )}
+              >
+                {tab.label}
+                {tab.id === 'all' && (
+                  <span className="ml-1.5 text-slate-400">({drafts.length})</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Draft List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+            {filteredDrafts.length === 0 && (
+              <div className="py-12 text-center text-sm text-slate-400">
+                No drafts in this category
+              </div>
+            )}
+            {filteredDrafts.map((draft) => {
+              const linkedCase = mockCases.find((c) => c.id === draft.case_id)
+              return (
+                <button
+                  key={draft.id}
+                  onClick={() => setSelectedDraftId(draft.id)}
+                  className={cn(
+                    'w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors',
+                    selectedDraftId === draft.id && 'bg-blue-50 border-l-2 border-blue-500'
+                  )}
+                >
+                  <p className="text-xs font-semibold text-slate-900 line-clamp-2 leading-snug mb-1.5">
+                    {draft.title}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mb-1.5">
+                    <TypeBadge type={draft.type} />
+                    <StatusBadge status={draft.status} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>{linkedCase?.reference ?? '—'}</span>
+                    <span>{formatRelative(draft.updated_at)}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── RIGHT PANEL ─────────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {!selectedDraft ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <FileText className="h-12 w-12 text-slate-300 mb-4" />
+              <h2 className="text-base font-semibold text-slate-600 mb-1">No draft selected</h2>
+              <p className="text-sm text-slate-400">Select a draft from the list, or create a new one.</p>
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                New Draft
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Draft Header */}
+              <div className="bg-white border-b border-slate-200 px-6 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Title row */}
+                  <div className="flex-1 min-w-0">
+                    {editingTitle ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        className="w-full text-base font-bold text-slate-900 border-b-2 border-blue-500 bg-transparent focus:outline-none pb-0.5"
+                        value={selectedDraft.title}
+                        onChange={(e) => updateDraftField('title', e.target.value)}
+                        onBlur={() => setEditingTitle(false)}
+                        onKeyDown={(e) => e.key === 'Enter' && setEditingTitle(false)}
+                      />
+                    ) : (
+                      <button
+                        className="flex items-center gap-2 group"
+                        onClick={() => setEditingTitle(true)}
+                      >
+                        <h2 className="text-base font-bold text-slate-900 text-left line-clamp-2">
+                          {selectedDraft.title}
+                        </h2>
+                        <Edit2 className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </button>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <TypeBadge type={selectedDraft.type} />
+                      <StatusBadge status={selectedDraft.status} />
+                      <span className="text-xs text-slate-400 font-mono">v{selectedDraft.version}</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
+                      <span>Created by <span className="font-medium">{selectedDraft.creator?.full_name ?? 'Unknown'}</span></span>
+                      <span className="text-slate-300">·</span>
+                      <span>{formatDateTime(selectedDraft.created_at)}</span>
+                      <span className="text-slate-300">·</span>
+                      <span>Updated {formatRelative(selectedDraft.updated_at)}</span>
+                    </div>
+
+                    {/* Case link */}
+                    {(() => {
+                      const linkedCase = mockCases.find((c) => c.id === selectedDraft.case_id)
+                      return linkedCase ? (
+                        <div className="mt-1.5">
+                          <span className="text-xs text-slate-500">Case: </span>
+                          <span className="text-xs font-semibold text-blue-600">{linkedCase.reference}</span>
+                          <span className="text-xs text-slate-500 ml-1">— {linkedCase.vessel?.name}</span>
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={handleSave}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      {saved ? 'Saved' : 'Save'}
+                    </button>
+
+                    {selectedDraft.status === 'draft' && (
+                      <button
+                        onClick={() => handleStatusChange('under_review')}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        Submit for Review
+                      </button>
+                    )}
+
+                    {selectedDraft.status === 'under_review' && (
+                      <button
+                        onClick={() => handleStatusChange('approved')}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        Approve
+                      </button>
+                    )}
+
+                    {selectedDraft.status === 'approved' && (
+                      <button
+                        onClick={() => handleStatusChange('sent')}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Send
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Editor Area */}
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <textarea
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 font-mono text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none leading-relaxed"
+                  rows={Math.max(30, selectedDraft.content.split('\n').length + 5)}
+                  value={selectedDraft.content}
+                  onChange={(e) => updateDraftField('content', e.target.value)}
+                  placeholder="Begin drafting your communication here..."
+                />
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <span>{selectedDraft.content.length.toLocaleString()} characters</span>
+                  <span className="text-slate-300">·</span>
+                  <span>{wordCount(selectedDraft.content).toLocaleString()} words</span>
+                  <span className="text-slate-300">·</span>
+                  <span>{selectedDraft.content.split('\n').length} lines</span>
+                </div>
+
+                {/* Version History Panel */}
+                <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                  <button
+                    onClick={() => setShowHistory((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <History className="h-4 w-4 text-slate-500" />
+                      Version History
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 text-slate-400 transition-transform',
+                        showHistory && 'rotate-180'
+                      )}
+                    />
+                  </button>
+                  {showHistory && (
+                    <div className="border-t border-slate-100 divide-y divide-slate-100">
+                      {versionHistory.map((vh) => (
+                        <div key={vh.version} className="px-4 py-3 flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-800">
+                              Version {vh.version}
+                              {vh.version === selectedDraft.version && (
+                                <span className="ml-2 text-blue-600">(current)</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">{vh.note}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-600">{vh.user}</p>
+                            <p className="text-xs text-slate-400">{formatRelative(vh.date)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </Modal>
+    </>
   )
 }
