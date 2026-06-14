@@ -1,0 +1,10 @@
+// Service layer barrel — import everything from '@/services'.
+export * from './client'
+export * from './types'
+export { authService } from './auth.service'
+export { casesService } from './cases.service'
+export { measurementsService } from './measurements.service'
+export { specChecksService } from './specChecks.service'
+export { draftsService } from './drafts.service'
+export { dashboardService } from './dashboard.service'
+export { storageService, buildDocumentPath } from './storage.service'
