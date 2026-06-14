@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   FolderOpen,
   Truck,
+  Inbox,
   Scale,
   FlaskConical,
   FileText,
@@ -50,6 +51,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { to: '/',            icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/cases',       icon: FolderOpen,      label: 'Cases',       badge: openCases },
         { to: '/deliveries',  icon: Truck,            label: 'Deliveries' },
+        { to: '/ingestion',   icon: Inbox,            label: 'Ingestion' },
       ],
     },
     {

@@ -4,6 +4,8 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CasesListPage } from '@/pages/cases/CasesListPage'
 import { CaseDetailPage } from '@/pages/cases/CaseDetailPage'
 import { DeliveriesPage } from '@/pages/deliveries/DeliveriesPage'
+import IngestionPage from '@/pages/ingestion/IngestionPage'
+import DocumentReviewPage from '@/pages/ingestion/DocumentReviewPage'
 import { CounterpartiesPage } from '@/pages/counterparties/CounterpartiesPage'
 import { VesselsPage } from '@/pages/vessels/VesselsPage'
 import ReconcilerPage from '@/pages/reconciler/ReconcilerPage'
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/cases"       element={<CasesListPage />} />
           <Route path="/cases/:id"   element={<CaseDetailPage />} />
           <Route path="/deliveries"  element={<DeliveriesPage />} />
+          <Route path="/ingestion"     element={<IngestionPage />} />
+          <Route path="/ingestion/:id" element={<DocumentReviewPage />} />
 
           {/* Analysis */}
           <Route path="/reconciler"  element={<ReconcilerPage />} />
