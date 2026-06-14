@@ -11,6 +11,7 @@ import SpecsCheckerPage from '@/pages/specs/SpecsCheckerPage'
 import DraftingCenterPage from '@/pages/drafts/DraftingCenterPage'
 import ClaimDrafterPage from '@/pages/claim-drafter/ClaimDrafterPage'
 import FuelReadinessPage from '@/pages/fuel-readiness/FuelReadinessPage'
+import ReadinessDetailPage from '@/pages/fuel-readiness/ReadinessDetailPage'
 import AdminPage from '@/pages/admin/AdminPage'
 
 export default function App() {
@@ -33,7 +34,8 @@ export default function App() {
           <Route path="/claim-drafter" element={<ClaimDrafterPage />} />
 
           {/* Compliance */}
-          <Route path="/fuel-readiness" element={<FuelReadinessPage />} />
+          <Route path="/fuel-readiness"     element={<FuelReadinessPage />} />
+          <Route path="/fuel-readiness/:id" element={<ReadinessDetailPage />} />
 
           {/* Masterdata */}
           <Route path="/counterparties" element={<CounterpartiesPage />} />
