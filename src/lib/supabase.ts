@@ -1,0 +1,14 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Guard: if env vars are missing (e.g. local dev without .env), fall back to
+// a no-op client so the UI still renders with mock data.
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+)
+
+export const isSupabaseConfigured =
+  Boolean(supabaseUrl) && Boolean(supabaseAnonKey)
