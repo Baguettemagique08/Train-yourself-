@@ -1054,3 +1054,1382 @@ export const mockDeliveries: (Delivery & { vessel_quantity: number; status: stri
     updated_at: '2026-06-10T14:00:00Z',
   },
 ]
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW ENTITIES — Companies co4, co5, co6
+// ─────────────────────────────────────────────────────────────────────────────
+
+const co4: Company = {
+  id: 'co4',
+  name: 'Olympus Shipping SA',
+  type: 'shipowner',
+  country: 'Greece',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const co5: Company = {
+  id: 'co5',
+  name: 'Levante Maritime BV',
+  type: 'shipowner',
+  country: 'Netherlands',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const co6: Company = {
+  id: 'co6',
+  name: 'Blue Shore Carriers Ltd',
+  type: 'shipowner',
+  country: 'Cyprus',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+mockCompanies.push(co4, co5, co6)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW ENTITIES — Vessels v5–v11
+// ─────────────────────────────────────────────────────────────────────────────
+
+const v5: Vessel = {
+  id: 'v5',
+  name: 'MV Elara Spirit',
+  imo: '9856341',
+  flag: 'Liberia',
+  vessel_type: 'Aframax Tanker',
+  dwt: 115000,
+  owner_id: 'co4',
+  owner: co4,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v6: Vessel = {
+  id: 'v6',
+  name: 'MV Poseidon Bay',
+  imo: '9901127',
+  flag: 'Malta',
+  vessel_type: 'VLCC',
+  dwt: 298000,
+  owner_id: 'co4',
+  owner: co4,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v7: Vessel = {
+  id: 'v7',
+  name: 'MV Thalassa Wind',
+  imo: '9742118',
+  flag: 'Marshall Islands',
+  vessel_type: 'Product Tanker',
+  dwt: 48000,
+  owner_id: 'co5',
+  owner: co5,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v8: Vessel = {
+  id: 'v8',
+  name: 'MV Hercules Merchant',
+  imo: '9623405',
+  flag: 'Greece',
+  vessel_type: 'Bulk Carrier',
+  dwt: 75000,
+  owner_id: 'co4',
+  owner: co4,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v9: Vessel = {
+  id: 'v9',
+  name: 'MV Cerulean Grace',
+  imo: '9788234',
+  flag: 'Bahamas',
+  vessel_type: 'Container Feeder',
+  dwt: 12000,
+  owner_id: 'co6',
+  owner: co6,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v10: Vessel = {
+  id: 'v10',
+  name: 'MV Byzantium Star',
+  imo: '9834567',
+  flag: 'Cyprus',
+  vessel_type: 'Handy Tanker',
+  dwt: 35000,
+  owner_id: 'co6',
+  owner: co6,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const v11: Vessel = {
+  id: 'v11',
+  name: 'MV Celtic Horizon',
+  imo: '9912006',
+  flag: 'Isle of Man',
+  vessel_type: 'Product Tanker',
+  dwt: 40000,
+  owner_id: 'co5',
+  owner: co5,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+mockVessels.push(v5, v6, v7, v8, v9, v10, v11)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW ENTITIES — Ports p4–p12
+// ─────────────────────────────────────────────────────────────────────────────
+
+const p4: Port = {
+  id: 'p4',
+  name: 'Antwerp',
+  country: 'Belgium',
+  unlocode: 'BEANR',
+  region: 'ARA',
+  timezone: 'Europe/Brussels',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p5: Port = {
+  id: 'p5',
+  name: 'Amsterdam',
+  country: 'Netherlands',
+  unlocode: 'NLAMS',
+  region: 'ARA',
+  timezone: 'Europe/Amsterdam',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p6: Port = {
+  id: 'p6',
+  name: 'Le Havre',
+  country: 'France',
+  unlocode: 'FRLEH',
+  region: 'France',
+  timezone: 'Europe/Paris',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p7: Port = {
+  id: 'p7',
+  name: 'Marseille',
+  country: 'France',
+  unlocode: 'FRMRS',
+  region: 'Mediterranean',
+  timezone: 'Europe/Paris',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p8: Port = {
+  id: 'p8',
+  name: 'Gibraltar',
+  country: 'Gibraltar',
+  unlocode: 'GIGIB',
+  region: 'Atlantic Hub',
+  timezone: 'Europe/Gibraltar',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p9: Port = {
+  id: 'p9',
+  name: 'Marsaxlokk',
+  country: 'Malta',
+  unlocode: 'MTMLA',
+  region: 'Mediterranean',
+  timezone: 'Europe/Malta',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p10: Port = {
+  id: 'p10',
+  name: 'Piraeus',
+  country: 'Greece',
+  unlocode: 'GRPIR',
+  region: 'Mediterranean',
+  timezone: 'Europe/Athens',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p11: Port = {
+  id: 'p11',
+  name: 'Genoa',
+  country: 'Italy',
+  unlocode: 'ITGOA',
+  region: 'Mediterranean',
+  timezone: 'Europe/Rome',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const p12: Port = {
+  id: 'p12',
+  name: 'Las Palmas',
+  country: 'Spain',
+  unlocode: 'ESLPA',
+  region: 'Atlantic Hub',
+  timezone: 'Atlantic/Canary',
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+mockPorts.push(p4, p5, p6, p7, p8, p9, p10, p11, p12)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW ENTITIES — Suppliers s4, s5
+// ─────────────────────────────────────────────────────────────────────────────
+
+const s4: Supplier = {
+  id: 's4',
+  name: 'World Fuel Services',
+  country: 'USA',
+  contact_email: 'bunkers@wfscorp.com',
+  is_approved: true,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+const s5: Supplier = {
+  id: 's5',
+  name: 'Bunker One',
+  country: 'Denmark',
+  contact_email: 'ops@bunker-one.com',
+  is_approved: true,
+  created_at: '2024-01-10T08:00:00Z',
+  updated_at: '2024-01-10T08:00:00Z',
+}
+
+mockSuppliers.push(s4, s5)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW DELIVERIES — del6 through del14 (those linked to cases c6–c14)
+// ─────────────────────────────────────────────────────────────────────────────
+
+mockDeliveries.push(
+  // del6: v2/p3/s3, HSFO, confirmed — linked to c6
+  {
+    id: 'del6',
+    reference: 'DEL-2026-0198',
+    delivery_date: '2026-04-12T06:00:00Z',
+    vessel_id: 'v2',
+    vessel: mockVessels[1],
+    port_id: 'p3',
+    port: mockPorts[2],
+    supplier_id: 's3',
+    supplier: mockSuppliers[2],
+    fuel_type: 'HSFO',
+    bdn_quantity: 1900.0,
+    vessel_quantity: 1850.0,
+    bdn_number: 'MIN-FUJ-2026-2201',
+    status: 'confirmed',
+    created_at: '2026-04-12T14:00:00Z',
+    updated_at: '2026-04-12T14:00:00Z',
+  },
+  // del7: v5/p4/s4, VLSFO, disputed — linked to c7
+  {
+    id: 'del7',
+    reference: 'DEL-2026-0461',
+    delivery_date: '2026-06-03T14:00:00Z',
+    vessel_id: 'v5',
+    vessel: v5,
+    port_id: 'p4',
+    port: p4,
+    supplier_id: 's4',
+    supplier: s4,
+    fuel_type: 'VLSFO',
+    bdn_quantity: 800.0,
+    vessel_quantity: 795.8,
+    bdn_number: 'WFS-ANT-2026-3841',
+    status: 'disputed',
+    created_at: '2026-06-03T20:00:00Z',
+    updated_at: '2026-06-03T20:00:00Z',
+  },
+  // del8: v6/p9/s5, HSFO, disputed — linked to c8
+  {
+    id: 'del8',
+    reference: 'DEL-2026-0447',
+    delivery_date: '2026-05-25T06:00:00Z',
+    vessel_id: 'v6',
+    vessel: v6,
+    port_id: 'p9',
+    port: p9,
+    supplier_id: 's5',
+    supplier: s5,
+    fuel_type: 'HSFO',
+    bdn_quantity: 1800.0,
+    vessel_quantity: 1778.5,
+    bdn_number: 'BO-MLT-2026-1182',
+    status: 'disputed',
+    created_at: '2026-05-25T14:00:00Z',
+    updated_at: '2026-05-25T14:00:00Z',
+  },
+  // del9: v7/p8/s1, MGO, disputed — linked to c9
+  {
+    id: 'del9',
+    reference: 'DEL-2026-0479',
+    delivery_date: '2026-06-06T12:00:00Z',
+    vessel_id: 'v7',
+    vessel: v7,
+    port_id: 'p8',
+    port: p8,
+    supplier_id: 's1',
+    supplier: mockSuppliers[0],
+    fuel_type: 'MGO',
+    bdn_quantity: 65.0,
+    vessel_quantity: 64.8,
+    bdn_number: 'PEN-GIB-2026-0884',
+    status: 'disputed',
+    created_at: '2026-06-06T18:00:00Z',
+    updated_at: '2026-06-06T18:00:00Z',
+  },
+  // del10: v8/p10/s3, VLSFO, disputed — linked to c10
+  {
+    id: 'del10',
+    reference: 'DEL-2026-0452',
+    delivery_date: '2026-06-01T18:00:00Z',
+    vessel_id: 'v8',
+    vessel: v8,
+    port_id: 'p10',
+    port: p10,
+    supplier_id: 's3',
+    supplier: mockSuppliers[2],
+    fuel_type: 'VLSFO',
+    bdn_quantity: 650.0,
+    vessel_quantity: 648.3,
+    bdn_number: 'MIN-PIR-2026-6634',
+    status: 'disputed',
+    created_at: '2026-06-02T08:00:00Z',
+    updated_at: '2026-06-02T08:00:00Z',
+  },
+  // del11: v9/p12/s2, VLSFO, confirmed — linked to c11
+  {
+    id: 'del11',
+    reference: 'DEL-2026-0388',
+    delivery_date: '2026-05-05T08:00:00Z',
+    vessel_id: 'v9',
+    vessel: v9,
+    port_id: 'p12',
+    port: p12,
+    supplier_id: 's2',
+    supplier: mockSuppliers[1],
+    fuel_type: 'VLSFO',
+    bdn_quantity: 320.0,
+    vessel_quantity: 328.4,
+    bdn_number: 'CHE-LPA-2026-2211',
+    status: 'confirmed',
+    created_at: '2026-05-05T16:00:00Z',
+    updated_at: '2026-05-05T16:00:00Z',
+  },
+  // del12: v10/p6/s4, LSMGO, disputed — linked to c12
+  {
+    id: 'del12',
+    reference: 'DEL-2026-0488',
+    delivery_date: '2026-06-08T09:00:00Z',
+    vessel_id: 'v10',
+    vessel: v10,
+    port_id: 'p6',
+    port: p6,
+    supplier_id: 's4',
+    supplier: s4,
+    fuel_type: 'LSMGO',
+    bdn_quantity: 180.0,
+    vessel_quantity: 167.8,
+    bdn_number: 'WFS-LH-2026-5129',
+    status: 'disputed',
+    created_at: '2026-06-08T16:00:00Z',
+    updated_at: '2026-06-08T16:00:00Z',
+  },
+  // del13: v3/p11/s3, B24, disputed — linked to c13
+  {
+    id: 'del13',
+    reference: 'DEL-2026-0472',
+    delivery_date: '2026-06-04T14:00:00Z',
+    vessel_id: 'v3',
+    vessel: mockVessels[2],
+    port_id: 'p11',
+    port: p11,
+    supplier_id: 's3',
+    supplier: mockSuppliers[2],
+    fuel_type: 'B24',
+    bdn_quantity: 420.0,
+    vessel_quantity: 419.1,
+    bdn_number: 'MIN-GEN-2026-2219',
+    status: 'disputed',
+    created_at: '2026-06-04T20:00:00Z',
+    updated_at: '2026-06-04T20:00:00Z',
+  },
+  // del14: v11/p5/s5, VLSFO, disputed — linked to c14
+  {
+    id: 'del14',
+    reference: 'DEL-2026-0501',
+    delivery_date: '2026-06-11T07:00:00Z',
+    vessel_id: 'v11',
+    vessel: v11,
+    port_id: 'p5',
+    port: p5,
+    supplier_id: 's5',
+    supplier: s5,
+    fuel_type: 'VLSFO',
+    bdn_quantity: 950.0,
+    vessel_quantity: 934.2,
+    bdn_number: 'BO-AMS-2026-7741',
+    status: 'disputed',
+    created_at: '2026-06-11T14:00:00Z',
+    updated_at: '2026-06-11T14:00:00Z',
+  },
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW CASES — c7 through c14
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Retrieve the delivery objects we just pushed for use in cases
+const _del7  = mockDeliveries.find(d => d.id === 'del7')!
+const _del8  = mockDeliveries.find(d => d.id === 'del8')!
+const _del9  = mockDeliveries.find(d => d.id === 'del9')!
+const _del10 = mockDeliveries.find(d => d.id === 'del10')!
+const _del11 = mockDeliveries.find(d => d.id === 'del11')!
+const _del12 = mockDeliveries.find(d => d.id === 'del12')!
+const _del13 = mockDeliveries.find(d => d.id === 'del13')!
+const _del14 = mockDeliveries.find(d => d.id === 'del14')!
+
+mockCases.push(
+  // c7: Antwerp VLSFO off-spec
+  {
+    id: 'c7',
+    reference: 'CPM-2026-0048',
+    delivery_id: 'del7',
+    delivery: _del7,
+    vessel_id: 'v5',
+    vessel: v5,
+    port_id: 'p4',
+    port: p4,
+    supplier_id: 's4',
+    supplier: s4,
+    fuel_type: 'VLSFO',
+    discrepancy_type: 'off_spec',
+    claimed_quantity: 800.0,
+    bdn_quantity: 800.0,
+    status: 'open',
+    priority: 'high',
+    assigned_to: 'u2',
+    assigned_user: mockUsers[1],
+    opened_at: '2026-06-05T09:00:00Z',
+    description: 'Independent lab analysis (SGS Antwerp lab ref ANT-2026-18842) reveals sulphur 0.53% m/m exceeding 0.50% MARPOL limit and kinematic viscosity 395 cSt exceeding 380 cSt ISO 8217 maximum. BDN values did not disclose deviation.',
+    created_at: '2026-06-05T09:00:00Z',
+    updated_at: '2026-06-11T15:00:00Z',
+  },
+  // c8: Marsaxlokk HSFO quantity short
+  {
+    id: 'c8',
+    reference: 'CPM-2026-0045',
+    delivery_id: 'del8',
+    delivery: _del8,
+    vessel_id: 'v6',
+    vessel: v6,
+    port_id: 'p9',
+    port: p9,
+    supplier_id: 's5',
+    supplier: s5,
+    fuel_type: 'HSFO',
+    discrepancy_type: 'quantity_short',
+    claimed_quantity: 1778.5,
+    bdn_quantity: 1800.0,
+    status: 'under_review',
+    priority: 'high',
+    assigned_to: 'u2',
+    assigned_user: mockUsers[1],
+    opened_at: '2026-05-27T08:00:00Z',
+    description: 'Three independent measurement sources — vessel ullage 1778.5 MT, MFM 1789.4 MT, and independent surveyor 1782.1 MT — all fall below BDN figure of 1800 MT. Only barge figure at 1803.2 MT exceeds BDN. Barge figures disputed. Estimated shortage 18-22 MT.',
+    created_at: '2026-05-27T08:00:00Z',
+    updated_at: '2026-06-10T11:00:00Z',
+  },
+  // c9: Gibraltar MGO documentation dispute
+  {
+    id: 'c9',
+    reference: 'CPM-2026-0052',
+    delivery_id: 'del9',
+    delivery: _del9,
+    vessel_id: 'v7',
+    vessel: v7,
+    port_id: 'p8',
+    port: p8,
+    supplier_id: 's1',
+    supplier: mockSuppliers[0],
+    fuel_type: 'MGO',
+    discrepancy_type: 'documentation',
+    claimed_quantity: 65.0,
+    bdn_quantity: 65.0,
+    status: 'open',
+    priority: 'normal',
+    assigned_to: 'u3',
+    assigned_user: mockUsers[2],
+    opened_at: '2026-06-07T10:00:00Z',
+    description: 'BDN signed by unidentified crew member, not vessel master as required. Delivery commencement time on BDN (14:30 LT) conflicts with vessel engine room log (15:15 LT). Chief Engineer disputes attendance at commencement. BDN validity under review; quantity figures within tolerance.',
+    created_at: '2026-06-07T10:00:00Z',
+    updated_at: '2026-06-07T10:00:00Z',
+  },
+  // c10: Piraeus VLSFO contamination
+  {
+    id: 'c10',
+    reference: 'CPM-2026-0056',
+    delivery_id: 'del10',
+    delivery: _del10,
+    vessel_id: 'v8',
+    vessel: v8,
+    port_id: 'p10',
+    port: p10,
+    supplier_id: 's3',
+    supplier: mockSuppliers[2],
+    fuel_type: 'VLSFO',
+    discrepancy_type: 'contamination',
+    claimed_quantity: 650.0,
+    bdn_quantity: 650.0,
+    status: 'escalated',
+    priority: 'urgent',
+    assigned_to: 'u1',
+    assigned_user: mockUsers[0],
+    opened_at: '2026-06-03T14:00:00Z',
+    description: 'Vessel reports abnormal dark sludge in HFO settling tank 24hrs post-delivery. Independent lab analysis (Intertek Piraeus ref PIR-2026-7741) detects chlorinated solvents: toluene 85 ppm, xylene 32 ppm. Waste/other compounds 0.15% v/v (ISO 8217 max 0.10%). Vessel slow-steaming pending full investigation. Off-hire and fuel disposal costs accumulating.',
+    created_at: '2026-06-03T14:00:00Z',
+    updated_at: '2026-06-12T09:00:00Z',
+  },
+  // c11: Las Palmas VLSFO quantity over
+  {
+    id: 'c11',
+    reference: 'CPM-2026-0033',
+    delivery_id: 'del11',
+    delivery: _del11,
+    vessel_id: 'v9',
+    vessel: v9,
+    port_id: 'p12',
+    port: p12,
+    supplier_id: 's2',
+    supplier: mockSuppliers[1],
+    fuel_type: 'VLSFO',
+    discrepancy_type: 'quantity_over',
+    claimed_quantity: 328.4,
+    bdn_quantity: 320.0,
+    status: 'resolved',
+    priority: 'low',
+    assigned_to: 'u3',
+    assigned_user: mockUsers[2],
+    opened_at: '2026-05-07T09:00:00Z',
+    description: 'Post-bunkering ullage 328.4 MT vs BDN 320 MT. Over-delivery 8.4 MT (2.6%). Supplier confirmed inadvertent over-delivery. Revised BDN 328.4 MT issued. Invoice adjusted. Case resolved.',
+    created_at: '2026-05-07T09:00:00Z',
+    updated_at: '2026-05-15T11:00:00Z',
+  },
+  // c12: Le Havre LSMGO MFM dispute
+  {
+    id: 'c12',
+    reference: 'CPM-2026-0059',
+    delivery_id: 'del12',
+    delivery: _del12,
+    vessel_id: 'v10',
+    vessel: v10,
+    port_id: 'p6',
+    port: p6,
+    supplier_id: 's4',
+    supplier: s4,
+    fuel_type: 'LSMGO',
+    discrepancy_type: 'mfm_dispute',
+    claimed_quantity: 163.5,
+    bdn_quantity: 180.0,
+    status: 'open',
+    priority: 'high',
+    assigned_to: 'u2',
+    assigned_user: mockUsers[1],
+    opened_at: '2026-06-09T09:00:00Z',
+    description: 'MFM record 163.5 MT significantly below BDN 180 MT and barge soundings 180.2 MT. Vessel ullage measurement 167.8 MT. Shore tank before/after comparison at Le Havre Oil Terminal indicates approx 169 MT delivered. Supplier disputes MFM; claims calibration drift. Discrepancy 16.5 MT (9.2%).',
+    created_at: '2026-06-09T09:00:00Z',
+    updated_at: '2026-06-09T09:00:00Z',
+  },
+  // c13: Genoa B24 off-spec
+  {
+    id: 'c13',
+    reference: 'CPM-2026-0061',
+    delivery_id: 'del13',
+    delivery: _del13,
+    vessel_id: 'v3',
+    vessel: mockVessels[2],
+    port_id: 'p11',
+    port: p11,
+    supplier_id: 's3',
+    supplier: mockSuppliers[2],
+    fuel_type: 'B24',
+    discrepancy_type: 'off_spec',
+    claimed_quantity: 420.0,
+    bdn_quantity: 420.0,
+    status: 'under_review',
+    priority: 'normal',
+    assigned_to: 'u1',
+    assigned_user: mockUsers[0],
+    opened_at: '2026-06-05T11:00:00Z',
+    description: 'B24 biofuel blend delivered with FAME content 27.2% v/v against maximum 24% declared in supply nomination and ISO 8217 FAME limit. Oxidation stability 4.2 hours against minimum 6 hours for FAME blends. Acid number borderline at 0.42 mg KOH/g. FuelEU compliance impact requires assessment.',
+    created_at: '2026-06-05T11:00:00Z',
+    updated_at: '2026-06-11T14:00:00Z',
+  },
+  // c14: Amsterdam VLSFO quantity short
+  {
+    id: 'c14',
+    reference: 'CPM-2026-0064',
+    delivery_id: 'del14',
+    delivery: _del14,
+    vessel_id: 'v11',
+    vessel: v11,
+    port_id: 'p5',
+    port: p5,
+    supplier_id: 's5',
+    supplier: s5,
+    fuel_type: 'VLSFO',
+    discrepancy_type: 'quantity_short',
+    claimed_quantity: 934.2,
+    bdn_quantity: 950.0,
+    status: 'pending_response',
+    priority: 'normal',
+    assigned_to: 'u2',
+    assigned_user: mockUsers[1],
+    opened_at: '2026-06-12T09:00:00Z',
+    description: 'Vessel ullage post-bunkering indicates 934.2 MT received vs BDN 950 MT. Independent surveyor (Bureau Veritas) figure 941.8 MT also below BDN. Barge departure soundings 952.7 MT. Three-way shortfall against BDN. Shortage approximately 15.8 MT. Formal response requested from Bunker One within 5 business days.',
+    created_at: '2026-06-12T09:00:00Z',
+    updated_at: '2026-06-12T09:00:00Z',
+  },
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW MEASUREMENTS — for cases c7–c14
+// ─────────────────────────────────────────────────────────────────────────────
+
+mockMeasurements.push(
+  // c7: Antwerp VLSFO off-spec — vessel, barge
+  {
+    id: 'm7',
+    case_id: 'c7',
+    source: 'vessel',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 795.8,
+    temperature_c: 47.2,
+    density_at_obs_kgm3: 0.9881,
+    vcf: 0.9956,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-06-03T19:30:00Z',
+    notes: 'Post-bunkering tank measurement',
+    created_at: '2026-06-05T09:00:00Z',
+    updated_at: '2026-06-05T09:00:00Z',
+  },
+  {
+    id: 'm8',
+    case_id: 'c7',
+    source: 'barge',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 802.1,
+    temperature_c: 48.5,
+    density_at_obs_kgm3: 0.9884,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-06-03T19:45:00Z',
+    notes: 'Barge departure soundings per BDN WFS-ANT-2026-3841',
+    created_at: '2026-06-05T09:00:00Z',
+    updated_at: '2026-06-05T09:00:00Z',
+  },
+  // c8: Marsaxlokk HSFO quantity short — vessel, barge (disputed), mfm, surveyor
+  {
+    id: 'm9',
+    case_id: 'c8',
+    source: 'vessel',
+    fuel_grade: 'HSFO',
+    is_disputed: false,
+    quantity_mt: 1778.5,
+    temperature_c: 44.8,
+    density_at_obs_kgm3: 0.9778,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-05-25T08:30:00Z',
+    notes: 'Post-bunkering ullage measurement',
+    created_at: '2026-05-27T08:00:00Z',
+    updated_at: '2026-05-27T08:00:00Z',
+  },
+  {
+    id: 'm10',
+    case_id: 'c8',
+    source: 'barge',
+    fuel_grade: 'HSFO',
+    is_disputed: true,
+    quantity_mt: 1803.2,
+    temperature_c: 45.5,
+    density_at_obs_kgm3: 0.9781,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-05-25T08:45:00Z',
+    notes: 'Barge departure soundings — sole outlier above BDN; barge meter accuracy disputed',
+    dispute_reason: 'Barge departure soundings inconsistent with three independent measurement sources',
+    created_at: '2026-05-27T08:00:00Z',
+    updated_at: '2026-05-27T08:00:00Z',
+  },
+  {
+    id: 'm11',
+    case_id: 'c8',
+    source: 'mfm',
+    fuel_grade: 'HSFO',
+    is_disputed: false,
+    quantity_mt: 1789.4,
+    temperature_c: 44.9,
+    density_at_obs_kgm3: 0.9779,
+    surveyor_name: 'MFM System',
+    timestamp_utc: '2026-05-25T08:35:00Z',
+    notes: 'Inline MFM reading during delivery',
+    created_at: '2026-05-27T08:00:00Z',
+    updated_at: '2026-05-27T08:00:00Z',
+  },
+  {
+    id: 'm12',
+    case_id: 'c8',
+    source: 'surveyor',
+    fuel_grade: 'HSFO',
+    is_disputed: false,
+    quantity_mt: 1782.1,
+    temperature_c: 45.0,
+    density_at_obs_kgm3: 0.9780,
+    surveyor_name: 'SGS Maritime Services',
+    timestamp_utc: '2026-05-25T09:15:00Z',
+    notes: 'Independent surveyor measurement — converges with vessel and MFM figures',
+    created_at: '2026-05-27T08:00:00Z',
+    updated_at: '2026-05-27T08:00:00Z',
+  },
+  // c9: Gibraltar MGO documentation — vessel only
+  {
+    id: 'm13',
+    case_id: 'c9',
+    source: 'vessel',
+    fuel_grade: 'MGO',
+    is_disputed: false,
+    quantity_mt: 64.8,
+    temperature_c: 22.1,
+    density_at_obs_kgm3: 0.8331,
+    vcf: 0.9992,
+    surveyor_name: 'Chief Engineer',
+    timestamp_utc: '2026-06-06T14:30:00Z',
+    notes: 'Post-bunkering tank measurement; quantity within tolerance',
+    created_at: '2026-06-07T10:00:00Z',
+    updated_at: '2026-06-07T10:00:00Z',
+  },
+  // c10: Piraeus VLSFO contamination — vessel, barge
+  {
+    id: 'm14',
+    case_id: 'c10',
+    source: 'vessel',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 648.3,
+    temperature_c: 46.1,
+    density_at_obs_kgm3: 0.9891,
+    vcf: 0.9959,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-06-01T21:45:00Z',
+    notes: 'Post-bunkering tank measurement',
+    created_at: '2026-06-03T14:00:00Z',
+    updated_at: '2026-06-03T14:00:00Z',
+  },
+  {
+    id: 'm15',
+    case_id: 'c10',
+    source: 'barge',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 651.7,
+    temperature_c: 46.8,
+    density_at_obs_kgm3: 0.9893,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-06-01T22:00:00Z',
+    notes: 'Barge departure soundings per BDN MIN-PIR-2026-6634',
+    created_at: '2026-06-03T14:00:00Z',
+    updated_at: '2026-06-03T14:00:00Z',
+  },
+  // c11: Las Palmas VLSFO quantity over — vessel, barge, mfm
+  {
+    id: 'm16',
+    case_id: 'c11',
+    source: 'vessel',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 328.4,
+    temperature_c: 49.2,
+    density_at_obs_kgm3: 0.9842,
+    vcf: 0.9947,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-05-05T10:30:00Z',
+    notes: 'Post-bunkering ullage — over-delivery confirmed',
+    created_at: '2026-05-07T09:00:00Z',
+    updated_at: '2026-05-07T09:00:00Z',
+  },
+  {
+    id: 'm17',
+    case_id: 'c11',
+    source: 'barge',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 328.9,
+    temperature_c: 49.8,
+    density_at_obs_kgm3: 0.9844,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-05-05T10:45:00Z',
+    notes: 'Barge departure soundings',
+    created_at: '2026-05-07T09:00:00Z',
+    updated_at: '2026-05-07T09:00:00Z',
+  },
+  {
+    id: 'm18',
+    case_id: 'c11',
+    source: 'mfm',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 327.1,
+    temperature_c: 49.1,
+    density_at_obs_kgm3: 0.9841,
+    surveyor_name: 'MFM System',
+    timestamp_utc: '2026-05-05T10:35:00Z',
+    notes: 'Inline MFM reading',
+    created_at: '2026-05-07T09:00:00Z',
+    updated_at: '2026-05-07T09:00:00Z',
+  },
+  // c12: Le Havre LSMGO MFM dispute — mfm (disputed by supplier), barge, vessel, manual
+  {
+    id: 'm19',
+    case_id: 'c12',
+    source: 'mfm',
+    fuel_grade: 'LSMGO',
+    is_disputed: true,
+    quantity_mt: 163.5,
+    temperature_c: 21.4,
+    density_at_obs_kgm3: 0.8448,
+    surveyor_name: 'MFM #WFS-LH-0042',
+    timestamp_utc: '2026-06-08T11:20:00Z',
+    notes: 'MFM reading disputed by supplier; calibration valid until December 2026',
+    dispute_reason: 'Supplier claims MFM calibration drift; calibration certificate valid until 2026-12',
+    created_at: '2026-06-09T09:00:00Z',
+    updated_at: '2026-06-09T09:00:00Z',
+  },
+  {
+    id: 'm20',
+    case_id: 'c12',
+    source: 'barge',
+    fuel_grade: 'LSMGO',
+    is_disputed: false,
+    quantity_mt: 180.2,
+    temperature_c: 22.1,
+    density_at_obs_kgm3: 0.8451,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-06-08T11:35:00Z',
+    notes: 'Barge departure soundings per BDN WFS-LH-2026-5129',
+    created_at: '2026-06-09T09:00:00Z',
+    updated_at: '2026-06-09T09:00:00Z',
+  },
+  {
+    id: 'm21',
+    case_id: 'c12',
+    source: 'vessel',
+    fuel_grade: 'LSMGO',
+    is_disputed: false,
+    quantity_mt: 167.8,
+    temperature_c: 21.8,
+    density_at_obs_kgm3: 0.8449,
+    surveyor_name: 'Chief Engineer',
+    timestamp_utc: '2026-06-08T11:15:00Z',
+    notes: 'Post-bunkering tank measurement',
+    created_at: '2026-06-09T09:00:00Z',
+    updated_at: '2026-06-09T09:00:00Z',
+  },
+  {
+    id: 'm22',
+    case_id: 'c12',
+    source: 'manual',
+    fuel_grade: 'LSMGO',
+    is_disputed: false,
+    quantity_mt: 169.4,
+    surveyor_name: 'Le Havre Oil Terminal',
+    timestamp_utc: '2026-06-08T08:00:00Z',
+    notes: 'Shore tank before/after comparison — Le Havre Oil Terminal',
+    created_at: '2026-06-09T09:00:00Z',
+    updated_at: '2026-06-09T09:00:00Z',
+  },
+  // c13: Genoa B24 off-spec — vessel, barge
+  {
+    id: 'm23',
+    case_id: 'c13',
+    source: 'vessel',
+    fuel_grade: 'B24',
+    is_disputed: false,
+    quantity_mt: 419.1,
+    temperature_c: 42.5,
+    density_at_obs_kgm3: 0.8934,
+    vcf: 0.9812,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-06-04T16:30:00Z',
+    notes: 'Post-bunkering tank measurement',
+    created_at: '2026-06-05T11:00:00Z',
+    updated_at: '2026-06-05T11:00:00Z',
+  },
+  {
+    id: 'm24',
+    case_id: 'c13',
+    source: 'barge',
+    fuel_grade: 'B24',
+    is_disputed: false,
+    quantity_mt: 421.8,
+    temperature_c: 43.1,
+    density_at_obs_kgm3: 0.8937,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-06-04T16:45:00Z',
+    notes: 'Barge departure soundings per BDN MIN-GEN-2026-2219',
+    created_at: '2026-06-05T11:00:00Z',
+    updated_at: '2026-06-05T11:00:00Z',
+  },
+  // c14: Amsterdam VLSFO quantity short — vessel, barge, surveyor
+  {
+    id: 'm25',
+    case_id: 'c14',
+    source: 'vessel',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 934.2,
+    temperature_c: 48.6,
+    density_at_obs_kgm3: 0.9867,
+    vcf: 0.9952,
+    surveyor_name: 'Chief Officer',
+    timestamp_utc: '2026-06-11T09:15:00Z',
+    notes: 'Post-bunkering ullage measurement',
+    created_at: '2026-06-12T09:00:00Z',
+    updated_at: '2026-06-12T09:00:00Z',
+  },
+  {
+    id: 'm26',
+    case_id: 'c14',
+    source: 'barge',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 952.7,
+    temperature_c: 49.1,
+    density_at_obs_kgm3: 0.9869,
+    surveyor_name: 'Barge Master',
+    timestamp_utc: '2026-06-11T09:30:00Z',
+    notes: 'Barge departure soundings per BDN BO-AMS-2026-7741',
+    created_at: '2026-06-12T09:00:00Z',
+    updated_at: '2026-06-12T09:00:00Z',
+  },
+  {
+    id: 'm27',
+    case_id: 'c14',
+    source: 'surveyor',
+    fuel_grade: 'VLSFO',
+    is_disputed: false,
+    quantity_mt: 941.8,
+    temperature_c: 48.8,
+    density_at_obs_kgm3: 0.9868,
+    surveyor_name: 'Bureau Veritas Amsterdam',
+    timestamp_utc: '2026-06-11T10:00:00Z',
+    notes: 'Independent surveyor measurement — below BDN and barge figure',
+    created_at: '2026-06-12T09:00:00Z',
+    updated_at: '2026-06-12T09:00:00Z',
+  },
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW SPEC CHECKS — for cases c7, c10, c13
+// ─────────────────────────────────────────────────────────────────────────────
+
+mockSpecsChecks.push(
+  // c7: Antwerp VLSFO off-spec (SGS Antwerp)
+  { id: 'sc10', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Density at 15°C', unit: 'kg/m³', bdn_value: 0.9881, contract_min: null, contract_max: 0.9910, lab_result: 0.9887, status: 'ok', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc11', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Flash Point', unit: '°C', bdn_value: 63.0, contract_min: 60.0, contract_max: null, lab_result: 64.0, status: 'ok', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc12', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Sulphur Content', unit: '% m/m', bdn_value: 0.47, contract_min: null, contract_max: 0.50, lab_result: 0.53, status: 'off_spec', notes: 'MARPOL SECA violation', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc13', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Kinematic Viscosity at 50°C', unit: 'cSt', bdn_value: 372.0, contract_min: null, contract_max: 380.0, lab_result: 395.0, status: 'off_spec', notes: 'Risk of pump cavitation at elevated viscosity', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc14', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Aluminium + Silicon', unit: 'mg/kg', bdn_value: null, contract_min: null, contract_max: 25.0, lab_result: 18.0, status: 'ok', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc15', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'CCAI', unit: '', bdn_value: null, contract_min: null, contract_max: 870.0, lab_result: 848.0, status: 'ok', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  { id: 'sc16', case_id: 'c7', fuel_grade: 'VLSFO', parameter_name: 'Water Content', unit: '% v/v', bdn_value: null, contract_min: null, contract_max: 0.50, lab_result: 0.08, status: 'ok', lab_reference: 'SGS-ANT-2026-18842', lab_date: '2026-06-10', lab_name: 'SGS Antwerp', created_at: '2026-06-11T09:00:00Z', updated_at: '2026-06-11T09:00:00Z' },
+  // c10: Piraeus VLSFO contamination (Intertek Piraeus)
+  { id: 'sc17', case_id: 'c10', fuel_grade: 'VLSFO', parameter_name: 'Chlorinated Solvents (toluene+xylene)', unit: 'ppm', bdn_value: null, contract_min: null, contract_max: 5.0, lab_result: 117.0, status: 'off_spec', notes: 'Toluene 85ppm, xylene 32ppm detected. Potential engine damage and regulatory violation.', lab_reference: 'ITEK-PIR-2026-7741', lab_date: '2026-06-05', lab_name: 'Intertek Piraeus', created_at: '2026-06-06T09:00:00Z', updated_at: '2026-06-06T09:00:00Z' },
+  { id: 'sc18', case_id: 'c10', fuel_grade: 'VLSFO', parameter_name: 'Waste/Other Compounds', unit: '% v/v', bdn_value: null, contract_min: null, contract_max: 0.10, lab_result: 0.15, status: 'off_spec', notes: 'ISO 8217 prohibits waste oil contamination', lab_reference: 'ITEK-PIR-2026-7741', lab_date: '2026-06-05', lab_name: 'Intertek Piraeus', created_at: '2026-06-06T09:00:00Z', updated_at: '2026-06-06T09:00:00Z' },
+  { id: 'sc19', case_id: 'c10', fuel_grade: 'VLSFO', parameter_name: 'Density at 15°C', unit: 'kg/m³', bdn_value: 0.9889, contract_min: null, contract_max: 0.9910, lab_result: 0.9895, status: 'ok', lab_reference: 'ITEK-PIR-2026-7741', lab_date: '2026-06-05', lab_name: 'Intertek Piraeus', created_at: '2026-06-06T09:00:00Z', updated_at: '2026-06-06T09:00:00Z' },
+  { id: 'sc20', case_id: 'c10', fuel_grade: 'VLSFO', parameter_name: 'Flash Point', unit: '°C', bdn_value: 62.0, contract_min: 60.0, contract_max: null, lab_result: 62.0, status: 'ok', lab_reference: 'ITEK-PIR-2026-7741', lab_date: '2026-06-05', lab_name: 'Intertek Piraeus', created_at: '2026-06-06T09:00:00Z', updated_at: '2026-06-06T09:00:00Z' },
+  { id: 'sc21', case_id: 'c10', fuel_grade: 'VLSFO', parameter_name: 'Sulphur Content', unit: '% m/m', bdn_value: 0.44, contract_min: null, contract_max: 0.50, lab_result: 0.45, status: 'ok', lab_reference: 'ITEK-PIR-2026-7741', lab_date: '2026-06-05', lab_name: 'Intertek Piraeus', created_at: '2026-06-06T09:00:00Z', updated_at: '2026-06-06T09:00:00Z' },
+  // c13: Genoa B24 off-spec (DNV Maritime Advisory Genoa)
+  { id: 'sc22', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'FAME Content', unit: '% v/v', bdn_value: 24.0, contract_min: null, contract_max: 24.0, lab_result: 27.2, status: 'off_spec', notes: 'Exceeds ISO 8217:2017 FAME limit and supply nomination specification', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+  { id: 'sc23', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'Oxidation Stability (Rancimat)', unit: 'hours', bdn_value: null, contract_min: 6.0, contract_max: null, lab_result: 4.2, status: 'off_spec', notes: 'FAME blend must meet minimum 6h oxidation stability per ISO 8217', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+  { id: 'sc24', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'Acid Number', unit: 'mg KOH/g', bdn_value: null, contract_min: null, contract_max: 0.50, lab_result: 0.42, status: 'warning', notes: 'Approaching limit; trend risk in storage', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+  { id: 'sc25', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'Sulphur Content', unit: '% m/m', bdn_value: 0.12, contract_min: null, contract_max: 0.50, lab_result: 0.11, status: 'ok', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+  { id: 'sc26', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'Flash Point', unit: '°C', bdn_value: null, contract_min: 60.0, contract_max: null, lab_result: 67.0, status: 'ok', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+  { id: 'sc27', case_id: 'c13', fuel_grade: 'B24', parameter_name: 'Water Content', unit: 'mg/kg', bdn_value: null, contract_min: null, contract_max: 500.0, lab_result: 210.0, status: 'ok', lab_reference: 'DNV-GEN-2026-9921', lab_date: '2026-06-08', lab_name: 'DNV Maritime Advisory Genoa', created_at: '2026-06-09T10:00:00Z', updated_at: '2026-06-09T10:00:00Z' },
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW DRAFTS — dr4 through dr9
+// ─────────────────────────────────────────────────────────────────────────────
+
+mockDrafts.push(
+  // dr4: c7, Claim_Letter, sent
+  {
+    id: 'dr4',
+    case_id: 'c7',
+    draft_type: 'Claim_Letter',
+    title: 'Claim Letter — MV Elara Spirit — Antwerp — Off-Spec VLSFO',
+    body: `Without Prejudice — Subject to Contract
+
+To: World Fuel Services Corp — Claims Department
+From: Copemer Ltd
+Date: 11 June 2026
+Re: Formal Claim — MV Elara Spirit (IMO 9856341) — Antwerp — 03 June 2026
+
+We write on behalf of the owners of MV Elara Spirit to formally notify World Fuel Services Corp of a claim arising from the bunker delivery of 03 June 2026 at the Port of Antwerp.
+
+DELIVERY DETAILS
+Vessel: MV Elara Spirit (IMO 9856341)
+Port: Antwerp (BEANR)
+Delivery Date: 03 June 2026
+BDN Reference: WFS-ANT-2026-3841
+Fuel Grade: VLSFO
+BDN Quantity: 800 MT
+
+NATURE OF CLAIM — OFF-SPEC FUEL
+Independent analysis by SGS Antwerp (Report ANT-2026-18842, dated 10 June 2026) of the retained representative sample confirms two parameters in non-conformance with ISO 8217:2017 RMG380:
+(1) Sulphur Content: 0.53% m/m — EXCEEDS MARPOL Annex VI SECA limit of 0.50% m/m
+(2) Kinematic Viscosity at 50°C: 395 cSt — exceeds ISO 8217 maximum of 380 cSt
+
+QUANTUM
+Estimated claim value USD 42,000–58,000 including cost of segregation, off-loading, and replacement fuel premium. Full quantum to be confirmed on completion of operational assessment.
+
+We require your substantive written response within 7 business days. All rights reserved without prejudice.
+
+Copemer Ltd`,
+    status: 'sent',
+    version: 1,
+    created_by: 'u2',
+    creator: mockUsers[1],
+    sent_at: '2026-06-11T10:00:00Z',
+    created_at: '2026-06-11T09:00:00Z',
+    updated_at: '2026-06-11T10:00:00Z',
+  },
+  // dr5: c8, Internal_Memo, draft
+  {
+    id: 'dr5',
+    case_id: 'c8',
+    draft_type: 'Internal_Memo',
+    title: 'Internal Analysis — MV Poseidon Bay — Marsaxlokk Quantity Short',
+    body: `INTERNAL — NOT FOR EXTERNAL DISTRIBUTION
+
+Subject: Quantity Short — MV Poseidon Bay / Bunker One — Marsaxlokk
+Date: 28 May 2026
+Prepared by: Sophie Lindqvist
+
+MEASUREMENT SUMMARY
+Vessel ullage: 1,778.5 MT
+MFM (inline): 1,789.4 MT
+Independent surveyor (SGS): 1,782.1 MT
+Barge (BDN source): 1,803.2 MT
+BDN Quantity: 1,800 MT
+
+ANALYSIS
+Three independent measurement sources converge in a range of 1,778–1,789 MT. The barge figure of 1,803.2 MT is the sole outlier, exceeding the BDN by 3.2 MT. This pattern is consistent with barge meter inaccuracy or trim error at departure soundings.
+
+RECOMMENDATION
+Challenge barge departure soundings; request barge tank calibration tables and trim log. Accept independent surveyor figure as primary reference. Estimated shortage claim: approximately 18–22 MT at ~USD 480/MT = USD 8,640–10,560.`,
+    status: 'draft',
+    version: 1,
+    created_by: 'u2',
+    creator: mockUsers[1],
+    created_at: '2026-05-28T14:00:00Z',
+    updated_at: '2026-05-28T14:00:00Z',
+  },
+  // dr6: c10, Protest_Letter, approved
+  {
+    id: 'dr6',
+    case_id: 'c10',
+    draft_type: 'Protest_Letter',
+    title: 'Vessel Protest — MV Hercules Merchant — Contaminated VLSFO — Piraeus',
+    body: `WITHOUT PREJUDICE
+
+NOTICE OF VESSEL PROTEST
+
+To: Minerva Bunkering S.A.
+Date: 04 June 2026
+Re: MV Hercules Merchant (IMO 9623405) — Piraeus — Delivery 01 June 2026 — BDN: MIN-PIR-2026-6634
+
+We hereby formally protest the quality of the bunker delivery described above. Within 24 hours of delivery, the vessel reported abnormal dark sludge accumulation in the HFO settling tank, with associated pressure differential increase across the purifier. Independent laboratory analysis (Intertek Piraeus, Report PIR-2026-7741) of the retained representative sample confirms:
+
+CHLORINATED SOLVENTS DETECTED
+Toluene: 85 mg/kg
+Xylene: 32 mg/kg
+
+WASTE COMPOUNDS: 0.15% v/v (ISO 8217:2017 maximum: 0.10% v/v)
+
+The presence of chlorinated solvents in marine fuel oil constitutes a serious breach of ISO 8217:2017 and MARPOL Annex VI. The vessel has been ordered to slow steam pending technical assessment. Off-hire is accruing.
+
+We hold you responsible for all losses, costs and expenses arising from this delivery, including off-hire, fuel disposal, tank cleaning, and replacement fuel costs. Formal claim to follow.
+
+All rights reserved without prejudice.
+Copemer Ltd`,
+    status: 'approved',
+    version: 1,
+    created_by: 'u1',
+    creator: mockUsers[0],
+    created_at: '2026-06-04T10:00:00Z',
+    updated_at: '2026-06-04T14:00:00Z',
+  },
+  // dr7: c12, LOP_Response, draft
+  {
+    id: 'dr7',
+    case_id: 'c12',
+    draft_type: 'LOP_Response',
+    title: 'LOP Response — MV Byzantium Star — Le Havre — MFM Dispute',
+    body: `Without Prejudice
+
+To: World Fuel Services Corp
+Attn: Bunker Operations
+Re: MV Byzantium Star (IMO 9834567) — Le Havre — 08 June 2026 — BDN Ref: WFS-LH-2026-5129
+
+We refer to your Letter of Protest and record our position as follows. MFM reading of 163.5 MT at the time of delivery is supported by:
+(1) Vessel ullage measurement: 167.8 MT
+(2) Shore tank before/after comparison: approximately 169 MT
+
+These three sources consistently indicate delivery of approximately 163–170 MT against your stated BDN figure of 180 MT.
+
+The discrepancy of 16.5 MT (9.2%) is significantly outside commercial tolerance and is not explained by the MFM calibration argument advanced by your operations team. MFM #WFS-LH-0042 calibration certificate is valid until December 2026.
+
+We formally request:
+(1) Barge departure soundings signed by barge master
+(2) MFM calibration certificate
+(3) Shore tank gauge records from Le Havre Oil Terminal
+
+All rights reserved.
+Copemer Ltd`,
+    status: 'draft',
+    version: 1,
+    created_by: 'u2',
+    creator: mockUsers[1],
+    created_at: '2026-06-09T14:00:00Z',
+    updated_at: '2026-06-09T14:00:00Z',
+  },
+  // dr8: c13, Supplier_Challenge, under_review
+  {
+    id: 'dr8',
+    case_id: 'c13',
+    draft_type: 'Supplier_Challenge',
+    title: 'Supplier Quality Challenge — MV Atlantic Carrier — Genoa — B24 Off-Spec',
+    body: `Without Prejudice
+
+To: Minerva Bunkering S.A. — Quality Department
+Re: MV Atlantic Carrier (IMO 9634789) — Genoa — B24 Delivery 04 June 2026 — BDN: MIN-GEN-2026-2219
+
+We write to formally challenge the quality of the B24 biofuel blend supplied under the above delivery.
+
+QUALITY NON-CONFORMANCES
+Laboratory analysis (DNV Maritime Advisory, Report DNV-GEN-2026-9921, dated 08 June 2026) confirms:
+(1) FAME Content: 27.2% v/v — EXCEEDS 24.0% v/v declared in supply nomination and ISO 8217:2017 limit
+(2) Oxidation Stability (Rancimat method): 4.2 hours — below minimum 6.0 hours required for FAME blends per EN 14112
+
+These non-conformances affect:
+(a) regulatory compliance under FuelEU Maritime
+(b) fuel storage stability and engine deposit risk
+
+We require your written response within 5 business days confirming:
+(1) Source of the out-of-specification FAME content
+(2) Quality control records for this parcel
+(3) Your proposed remedy
+
+All rights reserved.
+Copemer Ltd`,
+    status: 'under_review',
+    version: 1,
+    created_by: 'u1',
+    creator: mockUsers[0],
+    created_at: '2026-06-09T10:00:00Z',
+    updated_at: '2026-06-11T14:00:00Z',
+  },
+  // dr9: c14, Reservation_of_Rights, sent
+  {
+    id: 'dr9',
+    case_id: 'c14',
+    draft_type: 'Reservation_of_Rights',
+    title: 'Reservation of Rights — MV Celtic Horizon — Amsterdam — Quantity Short',
+    body: `Without Prejudice
+
+To: Bunker One A/S
+Attn: Operations Department
+Re: MV Celtic Horizon (IMO 9912006) — Amsterdam — 11 June 2026 — BDN Ref: BO-AMS-2026-7741
+
+We write on behalf of the owners of MV Celtic Horizon to formally reserve all rights in connection with the above delivery.
+
+Post-bunkering measurement shows the following:
+Vessel ullage: 934.2 MT
+Independent surveyor (Bureau Veritas): 941.8 MT
+Barge departure soundings: 952.7 MT
+BDN Quantity: 950 MT
+
+Vessel and surveyor figures indicate a shortfall of approximately 8–16 MT against the BDN quantity. All measurement records are being preserved. We formally request the following documents within 5 business days:
+(1) Barge departure ullage report signed by barge master
+(2) Barge calibration certificate
+(3) BDN co-signed by surveyor (if applicable)
+
+Until the above are received and reviewed, all our client's rights are expressly reserved, including rights of deduction and claim. This communication is written without prejudice.
+
+Copemer Ltd — Disputes & Claims Department`,
+    status: 'sent',
+    version: 1,
+    created_by: 'u2',
+    creator: mockUsers[1],
+    sent_at: '2026-06-12T11:00:00Z',
+    created_at: '2026-06-12T09:00:00Z',
+    updated_at: '2026-06-12T11:00:00Z',
+  },
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW FUEL READINESS RECORDS — fr5 through fr10
+// ─────────────────────────────────────────────────────────────────────────────
+
+mockFuelReadiness.push(
+  // fr5: v5 (Elara Spirit) — Methanol, in_progress, score 35
+  {
+    id: 'fr5',
+    vessel_id: 'v5',
+    vessel: v5,
+    fuel_type: 'Methanol',
+    status: 'in_progress',
+    readiness_score: 35,
+    requirements: [
+      { id: 'r21', label: 'Feasibility study', description: 'Methanol conversion feasibility study for Aframax tanker', completed: true },
+      { id: 'r22', label: 'IGF Code pre-assessment', description: 'Pre-assessment against IMO IGF Code requirements', completed: false, due_date: '2026-12-01' },
+      { id: 'r23', label: 'Flag state notification', description: 'Liberia flag state notification and approval process', completed: false },
+      { id: 'r24', label: 'Crew training', description: 'All officers methanol handling and emergency response training', completed: false, due_date: '2027-01-01' },
+      { id: 'r25', label: 'Fuel system engineering study', description: 'Engineering study for methanol fuel system adaptation', completed: false, due_date: '2026-11-01' },
+      { id: 'r26', label: 'Insurance review', description: 'P&I and H&M insurance review for methanol operations', completed: false },
+    ],
+    target_date: '2027-06-01',
+    certifying_body: "Lloyd's Register",
+    notes: 'Aframax conversion study commissioned. Longer timeline due to vessel age and flag state process.',
+    created_at: '2026-02-01T08:00:00Z',
+    updated_at: '2026-06-01T10:00:00Z',
+  },
+  // fr6: v6 (Poseidon Bay) — LNG, in_progress, score 55
+  {
+    id: 'fr6',
+    vessel_id: 'v6',
+    vessel: v6,
+    fuel_type: 'LNG',
+    status: 'in_progress',
+    readiness_score: 55,
+    requirements: [
+      { id: 'r27', label: 'IGF Code design review', description: 'Class design review against IMO IGF Code for LNG systems', completed: true },
+      { id: 'r28', label: 'Class notation application', description: 'DNV LNG-ready class notation application submitted', completed: true },
+      { id: 'r29', label: 'LNG fuel containment system approved', description: 'Class approval of LNG containment system design', completed: false, due_date: '2026-09-30' },
+      { id: 'r30', label: 'Dual-fuel engine order placed', description: 'MAN ME-GI dual-fuel engine order confirmed', completed: true },
+      { id: 'r31', label: 'Crew training programme', description: 'LNG handling, cryogenic safety, and emergency response', completed: true },
+      { id: 'r32', label: 'Port availability survey', description: 'LNG bunkering availability at primary VLCC ports', completed: false, due_date: '2026-08-01' },
+      { id: 'r33', label: 'First bunkering SOP', description: 'Standard operating procedure for first LNG bunkering', completed: false, due_date: '2026-10-01' },
+    ],
+    target_date: '2027-01-01',
+    certifying_body: 'DNV',
+    notes: 'Engine order confirmed MAN ME-GI. LNG containment system design under class review.',
+    created_at: '2025-10-01T08:00:00Z',
+    updated_at: '2026-06-08T14:00:00Z',
+  },
+  // fr7: v7 (Thalassa Wind) — B24, ready, score 89
+  {
+    id: 'fr7',
+    vessel_id: 'v7',
+    vessel: v7,
+    fuel_type: 'B24',
+    status: 'ready',
+    readiness_score: 89,
+    requirements: [
+      { id: 'r34', label: 'Engine compatibility confirmed', description: 'Wärtsilä engine compatibility with B24 biofuel blend confirmed', completed: true },
+      { id: 'r35', label: 'ISCC supplier qualification', description: 'ISCC-certified biofuel supplier qualified', completed: true },
+      { id: 'r36', label: 'Fuel system seals inspection', description: 'Seals and elastomers compatibility inspection completed', completed: true },
+      { id: 'r37', label: 'SMS update for biofuel', description: 'Safety Management System updated for biofuel handling', completed: true },
+      { id: 'r38', label: 'FuelEU GHG check', description: 'GHG intensity verification against FuelEU 2025 requirements', completed: true },
+      { id: 'r39', label: 'First delivery SOP signed', description: 'Standard operating procedure for B24 delivery signed by master', completed: false, due_date: '2026-07-15' },
+    ],
+    target_date: '2026-08-01',
+    certifying_body: 'Bureau Veritas',
+    notes: 'SMS update pending master signature. All technical checks complete for Wärtsilä engine.',
+    created_at: '2026-03-01T08:00:00Z',
+    updated_at: '2026-06-10T10:00:00Z',
+  },
+  // fr8: v8 (Hercules Merchant) — Ammonia, not_started, score 0
+  {
+    id: 'fr8',
+    vessel_id: 'v8',
+    vessel: v8,
+    fuel_type: 'Ammonia',
+    status: 'not_started',
+    readiness_score: 0,
+    requirements: [
+      { id: 'r40', label: 'Commercial viability study', description: 'Assessment of ammonia as fuel commercial viability for bulk carrier trading pattern', completed: false },
+      { id: 'r41', label: 'Class notation pre-assessment', description: 'Preliminary assessment for ammonia-ready class notation', completed: false },
+      { id: 'r42', label: 'SOLAS amendment review', description: 'Review of SOLAS amendments for ammonia as fuel', completed: false },
+      { id: 'r43', label: 'Port infrastructure survey', description: 'Survey of ammonia bunkering infrastructure at primary ports', completed: false },
+    ],
+    target_date: '2029-01-01',
+    notes: 'Deferred pending IMO MSC ammonia-as-fuel regulatory framework. Monitor developments.',
+    created_at: '2026-05-01T08:00:00Z',
+    updated_at: '2026-05-01T08:00:00Z',
+  },
+  // fr9: v11 (Celtic Horizon) — Methanol, in_progress, score 28
+  {
+    id: 'fr9',
+    vessel_id: 'v11',
+    vessel: v11,
+    fuel_type: 'Methanol',
+    status: 'in_progress',
+    readiness_score: 28,
+    requirements: [
+      { id: 'r44', label: 'Feasibility study', description: 'Methanol conversion feasibility study completed', completed: true },
+      { id: 'r45', label: 'IGF pre-assessment', description: 'IGF Code pre-assessment by DNV', completed: false, due_date: '2026-12-01' },
+      { id: 'r46', label: 'Flag state letter of intent', description: 'Isle of Man flag state letter of intent submitted', completed: false, due_date: '2026-10-01' },
+      { id: 'r47', label: 'Class notation application', description: 'DNV class notation application for methanol', completed: false },
+      { id: 'r48', label: 'Crew training', description: 'All officers methanol handling and safety training', completed: false, due_date: '2027-03-01' },
+      { id: 'r49', label: 'Insurance endorsement', description: 'P&I and H&M insurance endorsement for methanol operations', completed: false },
+      { id: 'r50', label: 'Shore supply SOP', description: 'Shore supply standard operating procedure for methanol', completed: false },
+    ],
+    target_date: '2027-09-01',
+    certifying_body: 'DNV',
+    notes: 'Isle of Man flag state process commenced. Engine room layout assessment complete.',
+    created_at: '2026-04-01T08:00:00Z',
+    updated_at: '2026-06-05T10:00:00Z',
+  },
+  // fr10: v9 (Cerulean Grace) — B24, certified, score 100
+  {
+    id: 'fr10',
+    vessel_id: 'v9',
+    vessel: v9,
+    fuel_type: 'B24',
+    status: 'certified',
+    readiness_score: 100,
+    requirements: [
+      { id: 'r51', label: 'Engine compatibility check', description: 'Engine compatibility with B24 biofuel blend confirmed', completed: true },
+      { id: 'r52', label: 'Fuel system inspection', description: 'Seals and elastomers compatibility verified', completed: true },
+      { id: 'r53', label: 'ISCC supplier qualification', description: 'ISCC-certified biofuel supplier qualified', completed: true },
+      { id: 'r54', label: 'Class certificate', description: 'Bureau Veritas biofuel-ready certificate issued', completed: true, doc_ref: 'BV-BF-2025-4412' },
+      { id: 'r55', label: 'SMS update', description: 'Safety Management System updated for biofuel operations', completed: true },
+      { id: 'r56', label: 'FuelEU compliance', description: 'GHG intensity verified meets FuelEU 2025 requirements', completed: true },
+    ],
+    certifying_body: 'Bureau Veritas',
+    certificate_ref: 'BV-BF-2025-4412',
+    notes: 'Certified November 2025. Operating B24 on Rotterdam and Antwerp calls.',
+    created_at: '2025-06-01T08:00:00Z',
+    updated_at: '2025-11-15T10:00:00Z',
+  },
+)
