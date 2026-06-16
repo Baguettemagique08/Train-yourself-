@@ -1,7 +1,12 @@
 import { useState, useCallback } from 'react'
-import { CheckCircle, AlertTriangle, XCircle, Plus, Download, Save } from 'lucide-react'
+import { CheckCircle, AlertTriangle, XCircle, Plus, Download, Save, BookOpen, ChevronDown } from 'lucide-react'
 import { mockCases, mockSpecsChecks } from '@/data/mockData'
 import { cn, formatDate, specStatusColor, specStatusLabel } from '@/lib/utils'
+import {
+  ISO_EDITIONS, ISO_8217_SPECS, MARKET_TO_ISO_GRADE,
+  getIsoEditionGrades, getIsoSpec,
+  type IsoEdition,
+} from '@/lib/iso8217'
 import type { SpecStatus } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -124,13 +129,47 @@ export default function SpecsCheckerPage() {
   const [saved, setSaved] = useState(false)
   const [linkedToCase, setLinkedToCase] = useState(false)
 
+  // ISO 8217 limit loader state
+  const [isoEdition, setIsoEdition] = useState<IsoEdition>('2017')
+  const [isoGrade, setIsoGrade] = useState<string>('RMG380')
+  const [isoExpanded, setIsoExpanded] = useState(false)
+
   const selectedCase = mockCases.find((c) => c.id === selectedCaseId) ?? null
 
   const handleCaseChange = useCallback((caseId: string) => {
     setSelectedCaseId(caseId)
     setRows(buildRows(caseId))
     setSaved(false)
+    // Suggest an ISO grade based on the case fuel type
+    const c = mockCases.find((mc) => mc.id === caseId)
+    if (c?.fuel_type) {
+      const suggestion = MARKET_TO_ISO_GRADE[c.fuel_type.toUpperCase()]
+      if (suggestion) {
+        setIsoEdition(suggestion.edition)
+        setIsoGrade(suggestion.grade)
+      }
+    }
   }, [])
+
+  const applyIsoLimits = useCallback(() => {
+    const spec = getIsoSpec(isoEdition, isoGrade)
+    if (!spec) return
+    let rowId = 0
+    const newRows = spec.params.map((param) => {
+      rowId += 1
+      return {
+        id: `iso-${isoEdition}-${isoGrade}-${rowId}`,
+        parameter: param.name,
+        unit: param.unit,
+        bdnValue: '',
+        contractMin: param.min != null ? String(param.min) : '',
+        contractMax: param.max != null ? String(param.max) : '',
+        labResult: '',
+      }
+    })
+    setRows(newRows)
+    setSaved(false)
+  }, [isoEdition, isoGrade])
 
   const updateRow = useCallback(
     (id: string, field: keyof Omit<SpecRow, 'id'>, value: string) => {
@@ -220,6 +259,118 @@ export default function SpecsCheckerPage() {
             draft analyses and must be verified against original certified lab reports before use in
             formal claim proceedings.
           </p>
+        </div>
+
+        {/* ISO 8217 Limit Loader */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 shadow-sm overflow-hidden">
+          <button
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
+            onClick={() => setIsoExpanded((v) => !v)}
+          >
+            <BookOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
+            <span className="text-sm font-semibold text-blue-800">ISO 8217 Standard Limits</span>
+            <span className="ml-2 text-xs text-blue-600 font-normal">
+              Pre-fill contract limits from the official specification
+            </span>
+            <ChevronDown className={cn('h-4 w-4 text-blue-500 ml-auto transition-transform', isoExpanded && 'rotate-180')} />
+          </button>
+
+          {isoExpanded && (
+            <div className="border-t border-blue-200 bg-white px-5 py-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                {/* Edition */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Edition</label>
+                  <select
+                    value={isoEdition}
+                    onChange={(e) => {
+                      const ed = e.target.value as IsoEdition
+                      setIsoEdition(ed)
+                      // keep grade if available in new edition, else reset
+                      const grades = getIsoEditionGrades(ed)
+                      const all = [...grades.distillate, ...grades.residual]
+                      if (!all.includes(isoGrade)) setIsoGrade(all[0] ?? '')
+                    }}
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {ISO_EDITIONS.map((ed) => (
+                      <option key={ed.value} value={ed.value}>{ed.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Grade */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Fuel Grade</label>
+                  <select
+                    value={isoGrade}
+                    onChange={(e) => setIsoGrade(e.target.value)}
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {(() => {
+                      const grades = getIsoEditionGrades(isoEdition)
+                      return (
+                        <>
+                          <optgroup label="Residual">
+                            {grades.residual.map((g) => <option key={g} value={g}>{g}</option>)}
+                          </optgroup>
+                          <optgroup label="Distillate">
+                            {grades.distillate.map((g) => <option key={g} value={g}>{g}</option>)}
+                          </optgroup>
+                        </>
+                      )
+                    })()}
+                  </select>
+                </div>
+
+                {/* Apply */}
+                <div>
+                  <button
+                    onClick={applyIsoLimits}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Apply ISO Limits
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview of spec */}
+              {(() => {
+                const spec = getIsoSpec(isoEdition, isoGrade)
+                if (!spec) return null
+                const note = MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
+                  MARKET_TO_ISO_GRADE[k].grade === isoGrade && MARKET_TO_ISO_GRADE[k].edition === isoEdition
+                ) ?? '']?.note
+                return (
+                  <div>
+                    <p className="text-xs text-slate-500 mb-2">
+                      <span className="font-medium text-slate-700">{spec.params.length} parameters</span>
+                      {' · '}
+                      {spec.category === 'residual' ? 'Residual fuel' : 'Distillate fuel'}
+                      {note && <span className="ml-2 text-amber-700 font-medium">⚠ {note}</span>}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {spec.params.slice(0, 12).map((param) => (
+                        <span key={param.name} className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-600">
+                          {param.name}
+                          {param.max != null && <span className="ml-1 text-slate-400">≤{param.max}</span>}
+                          {param.min != null && param.max == null && <span className="ml-1 text-slate-400">≥{param.min}</span>}
+                        </span>
+                      ))}
+                      {spec.params.length > 12 && (
+                        <span className="text-[10px] text-slate-400 self-center">+{spec.params.length - 12} more</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              <p className="text-[11px] text-slate-400">
+                Applying ISO limits will replace the current parameter rows. BDN values and lab results are preserved if the parameter name matches exactly.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Case / Delivery Selector Panel */}
