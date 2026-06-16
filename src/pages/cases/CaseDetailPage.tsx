@@ -15,6 +15,7 @@ import { SpecsTab } from './tabs/SpecsTab'
 import { DraftsTab } from './tabs/DraftsTab'
 import { ActivityTab } from './tabs/ActivityTab'
 import { FuelReadinessTab } from './tabs/FuelReadinessTab'
+import { SamplesTab } from './tabs/SamplesTab'
 import { formatDate } from '@/lib/utils'
 import {
   FUEL_TYPE_OPTIONS, DISCREPANCY_TYPE_OPTIONS, PRIORITY_OPTIONS,
@@ -97,6 +98,7 @@ export function CaseDetailPage() {
   const tabs: TabDefinition[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'evidence', label: 'Evidence' },
+    { id: 'samples', label: 'Samples' },
     { id: 'figures', label: 'Figures' },
     { id: 'specs', label: 'Specs Check' },
     { id: 'drafts', label: 'Drafts' },
@@ -169,6 +171,7 @@ export function CaseDetailPage() {
         <div className="p-5">
           {activeTab === 'overview' && <OverviewTab case_={case_} />}
           {activeTab === 'evidence' && <EvidenceTab caseId={case_.id} />}
+          {activeTab === 'samples' && <SamplesTab caseId={case_.id} />}
           {activeTab === 'figures' && <FiguresTab caseId={case_.id} />}
           {activeTab === 'specs' && <SpecsTab caseId={case_.id} />}
           {activeTab === 'drafts' && <DraftsTab caseId={case_.id} />}

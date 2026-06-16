@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
-import type { CaseStatus, DiscrepancyType, DocumentType, DraftStatus, FuelReadinessStatus, FuelType, SpecStatus } from '@/types'
+import type { BdnSigningStatus, BunkerSampleStatus, BunkerSampleType, CaseStatus, DiscrepancyType, DocumentType, DraftStatus, FuelReadinessStatus, FuelType, JointSurveyStatus, SettlementMethod, SpecStatus } from '@/types'
 
 // ── Tailwind class merger ────────────────────────────────────────────────────
 
@@ -95,6 +95,11 @@ export function documentTypeLabel(type: DocumentType): string {
     Invoice: 'Invoice',
     Correspondence: 'Correspondence',
     Other: 'Other',
+    Bunker_Record_Book: 'Bunker Record Book',
+    Sample_Analysis_Certificate: 'Sample Analysis Certificate',
+    MFM_Certificate: 'MFM Calibration Certificate',
+    Joint_Survey_Report: 'Joint Survey Report',
+    Supplier_Response: 'Supplier Response',
   }
   return map[type] ?? type
 }
@@ -232,4 +237,65 @@ export function clampVariance(value: number, warningPct = 0.3, criticalPct = 0.5
   if (abs >= criticalPct) return 'red'
   if (abs >= warningPct) return 'amber'
   return 'ok'
+}
+
+export function bdnSigningStatusLabel(status: BdnSigningStatus): string {
+  const map: Record<BdnSigningStatus, string> = {
+    clean: 'Signed Clean',
+    under_protest: 'Signed Under Protest',
+    refused: 'Refused to Sign',
+  }
+  return map[status] ?? status
+}
+
+export function bdnSigningStatusColor(status: BdnSigningStatus): string {
+  const map: Record<BdnSigningStatus, string> = {
+    clean: 'bg-amber-100 text-amber-700',
+    under_protest: 'bg-green-100 text-green-700',
+    refused: 'bg-red-100 text-red-700',
+  }
+  return map[status] ?? 'bg-slate-100 text-slate-600'
+}
+
+export function jointSurveyStatusLabel(status: JointSurveyStatus): string {
+  const map: Record<JointSurveyStatus, string> = {
+    not_requested: 'Not Requested',
+    requested: 'Requested',
+    refused: 'Refused by Supplier',
+    scheduled: 'Scheduled',
+    completed: 'Completed',
+  }
+  return map[status] ?? status
+}
+
+export function settlementMethodLabel(method: SettlementMethod): string {
+  const map: Record<SettlementMethod, string> = {
+    credit_note: 'Credit Note',
+    cash: 'Cash Payment',
+    supplementary_delivery: 'Supplementary Delivery',
+    arbitration_award: 'Arbitration Award',
+    other: 'Other',
+  }
+  return map[method] ?? method
+}
+
+export function bunkerSampleTypeLabel(type: BunkerSampleType): string {
+  const map: Record<BunkerSampleType, string> = {
+    marpol: 'MARPOL Retained Sample',
+    vessel: "Vessel's Sample",
+    joint_drip: 'Joint Drip Sample',
+    other: 'Other',
+  }
+  return map[type] ?? type
+}
+
+export function bunkerSampleStatusLabel(status: BunkerSampleStatus): string {
+  const map: Record<BunkerSampleStatus, string> = {
+    sealed: 'Sealed',
+    in_transit: 'In Transit to Lab',
+    at_lab: 'At Laboratory',
+    results_received: 'Results Received',
+    disputed: 'Disputed',
+  }
+  return map[status] ?? status
 }

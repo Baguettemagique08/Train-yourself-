@@ -40,6 +40,11 @@ export const DOCUMENT_TYPE_OPTIONS: SelectOption[] = [
   { value: 'MFM_Log', label: 'MFM Log' },
   { value: 'Ullage_Report', label: 'Ullage Report' },
   { value: 'Charter_Party', label: 'Charter Party' },
+  { value: 'Bunker_Record_Book', label: 'Bunker Record Book' },
+  { value: 'Sample_Analysis_Certificate', label: 'Sample Analysis Certificate' },
+  { value: 'MFM_Certificate', label: 'MFM Calibration Certificate' },
+  { value: 'Joint_Survey_Report', label: 'Joint Survey Report' },
+  { value: 'Supplier_Response', label: 'Supplier Response' },
   { value: 'Other', label: 'Other' },
 ]
 

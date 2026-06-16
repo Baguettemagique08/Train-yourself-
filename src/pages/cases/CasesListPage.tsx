@@ -88,7 +88,7 @@ export function CasesListPage() {
     },
     {
       key: 'quantity',
-      header: 'Claimed (MT)',
+      header: 'Received (MT)',
       align: 'right',
       cell: (row) => row.claimed_quantity ? formatMT(row.claimed_quantity) : '—',
     },

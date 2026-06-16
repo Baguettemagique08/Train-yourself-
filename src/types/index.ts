@@ -52,6 +52,11 @@ export type DocumentType =
   | 'Invoice'
   | 'Correspondence'
   | 'Other'
+  | 'Bunker_Record_Book'
+  | 'Sample_Analysis_Certificate'
+  | 'MFM_Certificate'
+  | 'Joint_Survey_Report'
+  | 'Supplier_Response'
 
 export type DocumentStatus =
   | 'uploading'
@@ -126,6 +131,12 @@ export type ActivityType =
   | 'fuel_readiness_updated'
 
 export type AuditOperation = 'INSERT' | 'UPDATE' | 'DELETE'
+
+export type BdnSigningStatus = 'clean' | 'under_protest' | 'refused'
+export type JointSurveyStatus = 'not_requested' | 'requested' | 'refused' | 'scheduled' | 'completed'
+export type SettlementMethod = 'credit_note' | 'cash' | 'supplementary_delivery' | 'arbitration_award' | 'other'
+export type BunkerSampleType = 'marpol' | 'vessel' | 'joint_drip' | 'other'
+export type BunkerSampleStatus = 'sealed' | 'in_transit' | 'at_lab' | 'results_received' | 'disputed'
 
 // ============================================================
 // MASTER DATA ENTITIES
@@ -287,6 +298,44 @@ export interface Case {
 
   description: string
   internal_notes?: string
+
+  // BDN signing
+  bdn_signed_status?: BdnSigningStatus
+  lop_attached_at_signing?: boolean
+  bdn_signed_by?: string
+
+  // Parties
+  charterer_id?: string
+  charterer?: Company
+  governing_law?: string
+  jurisdiction?: string
+  supplier_pi_insurer?: string
+  supplier_pi_reference?: string
+
+  // Time bars
+  claim_notice_deadline?: string
+  claim_time_bar?: string
+
+  // Joint survey
+  joint_survey_status?: JointSurveyStatus
+  joint_survey_requested_at?: string
+  joint_survey_surveyor?: string
+  joint_survey_outcome?: string
+
+  // Fuel safety
+  fuel_use_stopped?: boolean
+  fuel_use_stopped_at?: string
+  fuel_segregated?: boolean
+
+  // Settlement
+  settlement_method?: SettlementMethod
+  settlement_amount?: number
+  settlement_currency?: string
+  settlement_reference?: string
+  settlement_date?: string
+
+  // Relations
+  bunker_samples?: BunkerSample[]
 
   deleted_at?: string
   created_at: string
@@ -453,6 +502,23 @@ export interface Activity {
   metadata?: Record<string, unknown>
 
   created_at: string
+}
+
+export interface BunkerSample {
+  id: string
+  case_id: string
+  sample_type: BunkerSampleType
+  seal_number?: string
+  sealed_by?: string
+  sealed_at?: string
+  lab_reference?: string
+  lab_name?: string
+  analysis_date?: string
+  status: BunkerSampleStatus
+  document_id?: string
+  notes?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface FuelRequirement {

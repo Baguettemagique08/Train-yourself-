@@ -1,6 +1,6 @@
 import type {
   User, Company, Contact, Vessel, Port, Supplier, Delivery, Case, Document,
-  Measurement, SpecsCheck, Draft, Activity, FuelReadinessRecord, Threshold, Template
+  Measurement, SpecsCheck, Draft, Activity, FuelReadinessRecord, Threshold, Template, BunkerSample
 } from '@/types'
 
 // ── Users ────────────────────────────────────────────────────────────────────
@@ -206,7 +206,20 @@ export const mockCases: Case[] = [
     assigned_to: 'u1',
     assigned_user: mockUsers[0],
     description: 'Vessel figures indicate 487.2 MT received against BDN quantity of 500.0 MT. MFM log records 495.1 MT. Discrepancy of 12.8 MT (2.56%) requires formal investigation and LOP issuance.',
-    
+    bdn_signed_status: 'under_protest' as const,
+    lop_attached_at_signing: true,
+    bdn_signed_by: 'Capt. M. Andersen, Master',
+    governing_law: 'English Law',
+    jurisdiction: 'LMAA London Arbitration',
+    supplier_pi_insurer: 'UK P&I Club',
+    claim_notice_deadline: '2026-06-30T23:59:59Z',
+    claim_time_bar: '2027-05-30T23:59:59Z',
+    joint_survey_status: 'completed' as const,
+    joint_survey_requested_at: '2026-06-02T10:00:00Z',
+    joint_survey_surveyor: 'Brookes Bell Rotterdam',
+    joint_survey_outcome: 'Survey confirms 488.9 MT received. Barge meter certified accurate.',
+    fuel_use_stopped: false,
+    fuel_segregated: false,
     created_at: '2026-06-02T09:00:00Z',
     updated_at: '2026-06-10T14:22:00Z',
   },
@@ -230,7 +243,19 @@ export const mockCases: Case[] = [
     assigned_to: 'u2',
     assigned_user: mockUsers[1],
     description: 'Lab analysis of delivered VLSFO shows flash point of 58°C against minimum specification of 60°C. Aluminium + Silicon at 42 mg/kg exceeds 25 mg/kg limit. Fuel may cause engine damage.',
-    
+    bdn_signed_status: 'under_protest' as const,
+    lop_attached_at_signing: true,
+    bdn_signed_by: 'Capt. L. Svensson, Master',
+    governing_law: 'Singapore Law',
+    jurisdiction: 'SCMA Singapore Arbitration',
+    supplier_pi_insurer: 'Gard P&I',
+    claim_notice_deadline: '2026-06-29T23:59:59Z',
+    claim_time_bar: '2027-05-12T23:59:59Z',
+    joint_survey_status: 'requested' as const,
+    joint_survey_requested_at: '2026-05-30T14:00:00Z',
+    fuel_use_stopped: true,
+    fuel_use_stopped_at: '2026-05-30T16:00:00Z',
+    fuel_segregated: true,
     created_at: '2026-05-30T10:15:00Z',
     updated_at: '2026-06-09T16:45:00Z',
   },
@@ -302,7 +327,13 @@ export const mockCases: Case[] = [
     assigned_to: 'u3',
     assigned_user: mockUsers[2],
     description: 'Sulphur content measured at 0.52% m/m against 0.50% maximum limit. Supplier acknowledged out-of-spec delivery. Claim settled by credit note of USD 18,500.',
-    
+    bdn_signed_status: 'clean' as const,
+    governing_law: 'English Law',
+    settlement_method: 'credit_note' as const,
+    settlement_amount: 18500,
+    settlement_currency: 'USD',
+    settlement_reference: 'CHM-CN-2026-0441',
+    settlement_date: '2026-05-25T00:00:00Z',
     created_at: '2026-05-02T10:00:00Z',
     updated_at: '2026-05-28T09:00:00Z',
   },
@@ -326,7 +357,12 @@ export const mockCases: Case[] = [
     assigned_to: 'u1',
     assigned_user: mockUsers[0],
     description: 'Quantity short of 50 MT resolved by supplementary delivery. Case closed following confirmation of corrected BDN.',
-
+    bdn_signed_status: 'clean' as const,
+    governing_law: 'English Law',
+    settlement_method: 'supplementary_delivery' as const,
+    settlement_amount: 50,
+    settlement_reference: 'MIN-SUPP-2026-0088',
+    settlement_date: '2026-04-22T00:00:00Z',
     created_at: '2026-04-12T08:00:00Z',
     updated_at: '2026-04-25T17:00:00Z',
   },
@@ -335,6 +371,76 @@ export const mockCases: Case[] = [
 // Module-level registry so mutations (create/update) survive navigation.
 export const caseRegistry = new Map<string, Case>()
 mockCases.forEach((c) => caseRegistry.set(c.id, c))
+
+// ── Bunker Samples ────────────────────────────────────────────────────────────
+
+export const mockBunkerSamples: BunkerSample[] = [
+  {
+    id: 'bs1',
+    case_id: 'c1',
+    sample_type: 'marpol',
+    seal_number: 'PEN-RTM-2026-8821-M',
+    sealed_by: 'Peninsula Petroleum — Rotterdam',
+    sealed_at: '2026-05-30T14:30:00Z',
+    lab_reference: 'IACS-2026-44721',
+    lab_name: 'Intertek Rotterdam',
+    status: 'at_lab',
+    notes: 'MARPOL retained sample held by Peninsula Petroleum. Requested testing 2026-06-05.',
+    created_at: '2026-06-02T09:05:00Z',
+    updated_at: '2026-06-05T10:00:00Z',
+  },
+  {
+    id: 'bs2',
+    case_id: 'c1',
+    sample_type: 'vessel',
+    seal_number: 'NS-RTM-001',
+    sealed_by: 'Chief Engineer — MV Nordic Star',
+    sealed_at: '2026-05-30T14:30:00Z',
+    status: 'sealed',
+    notes: "Vessel's retained sample secured in bond store.",
+    created_at: '2026-06-02T09:05:00Z',
+    updated_at: '2026-06-02T09:05:00Z',
+  },
+  {
+    id: 'bs3',
+    case_id: 'c1',
+    sample_type: 'joint_drip',
+    seal_number: 'NS-RTM-JD-001',
+    sealed_by: 'Joint — Peninsula / MV Nordic Star',
+    sealed_at: '2026-05-30T13:00:00Z',
+    status: 'sealed',
+    notes: 'Joint drip sample taken during delivery. Both parties signed seal record.',
+    created_at: '2026-06-02T09:05:00Z',
+    updated_at: '2026-06-02T09:05:00Z',
+  },
+  {
+    id: 'bs4',
+    case_id: 'c2',
+    sample_type: 'marpol',
+    seal_number: 'CHM-SIN-2026-3341-M',
+    sealed_by: 'Chemoil Energy — Singapore',
+    sealed_at: '2026-05-12T09:00:00Z',
+    lab_reference: 'SGS-SIN-2026-88123',
+    lab_name: 'SGS Singapore',
+    analysis_date: '2026-05-28T00:00:00Z',
+    status: 'results_received',
+    notes: 'MARPOL sample tested. Flash point confirmed 58°C. Al+Si confirmed 42 mg/kg.',
+    created_at: '2026-05-30T10:15:00Z',
+    updated_at: '2026-05-28T12:00:00Z',
+  },
+  {
+    id: 'bs5',
+    case_id: 'c2',
+    sample_type: 'vessel',
+    seal_number: 'PH-SIN-VS-002',
+    sealed_by: 'Chief Engineer — MV Pacific Horizon',
+    sealed_at: '2026-05-12T09:00:00Z',
+    status: 'sealed',
+    notes: "Vessel sample retained on board. Not yet sent for testing.",
+    created_at: '2026-05-30T10:15:00Z',
+    updated_at: '2026-05-30T10:15:00Z',
+  },
+]
 
 // ── Documents ─────────────────────────────────────────────────────────────────
 

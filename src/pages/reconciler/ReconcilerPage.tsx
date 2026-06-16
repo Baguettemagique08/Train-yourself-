@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import {
   AlertTriangle, Download, Printer, Save, MessageSquarePlus, Scale, Info,
+  Hash, ChevronDown,
 } from 'lucide-react'
 import { useReconciler } from '@/hooks/useReconciler'
 import { QuantityTable } from './components/QuantityTable'
@@ -8,13 +9,19 @@ import { BasisMatrix } from './components/BasisMatrix'
 import { EvidenceGapPanel, LikelyCausesPanel } from './components/AnalysisPanels'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { DEFAULT_THRESHOLDS } from '@/lib/reconciler'
-import { mockCases } from '@/data/mockData'
-import { formatDate, formatRelative, initials } from '@/lib/utils'
+import { mockCases, mockMeasurements } from '@/data/mockData'
+import { formatDate, formatRelative, initials, cn } from '@/lib/utils'
 
 export default function ReconcilerPage() {
   const rec = useReconciler()
   const { analysis, selectedCase } = rec
   const [saved, setSaved] = useState(false)
+  const [showVcf, setShowVcf] = useState(false)
+
+  // Measurements for the selected case + effective grade (for VCF chain)
+  const vcfMeasurements = mockMeasurements.filter(
+    (m) => m.case_id === rec.caseId && (!rec.effectiveGrade || m.fuel_grade === rec.effectiveGrade),
+  )
 
   const handleExportCSV = useCallback(() => {
     const headers = ['Source', 'Reading time', 'Measured MT', 'Adjustment MT', 'Net MT', 'Delta vs base MT', 'Delta %', 'Flag']
@@ -127,6 +134,71 @@ export default function ReconcilerPage() {
             />
 
             <BasisMatrix rows={analysis.basis_rows} presentSources={analysis.present_sources} />
+
+            {/* VCF Calculation Chain */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm">
+              <button
+                onClick={() => setShowVcf((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Hash className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  VCF Calculation Chain (ASTM D1250)
+                </span>
+                <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', showVcf && 'rotate-180')} />
+              </button>
+
+              {showVcf && vcfMeasurements.length > 0 && (
+                <div className="border-t border-slate-100 dark:border-slate-700 overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-700/50 text-left">
+                        {['Source', 'Obs. Vol. (m³)', 'Temp (°C)', 'Density@Obs (kg/m³)', 'VCF', 'Vol@15°C (m³)', 'Density@15°C (kg/m³)', 'Trim Corr. (m³)', 'Mass (MT)'].map((h) => (
+                          <th key={h} className="px-3 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {vcfMeasurements.map((m) => {
+                        const volAt15 = m.observed_volume_m3 != null && m.vcf != null
+                          ? m.observed_volume_m3 * m.vcf
+                          : null
+                        const massCalc = volAt15 != null && m.density_at_15c_kgm3 != null
+                          ? ((volAt15 + (m.trim_correction_m3 ?? 0)) * m.density_at_15c_kgm3) / 1000
+                          : null
+                        return (
+                          <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                            <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100 capitalize">{m.source}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.observed_volume_m3 != null ? m.observed_volume_m3.toFixed(2) : '—'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.temperature_c != null ? m.temperature_c.toFixed(1) : '—'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.density_at_obs_kgm3 != null ? m.density_at_obs_kgm3.toFixed(4) : '—'}</td>
+                            <td className="px-3 py-2 font-mono text-slate-600 dark:text-slate-300">{m.vcf != null ? m.vcf.toFixed(4) : '—'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{volAt15 != null ? volAt15.toFixed(2) : '—'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.density_at_15c_kgm3 != null ? m.density_at_15c_kgm3.toFixed(4) : '—'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.trim_correction_m3 != null ? m.trim_correction_m3.toFixed(2) : '—'}</td>
+                            <td className="px-3 py-2 font-semibold text-slate-900 dark:text-slate-100">
+                              {massCalc != null ? massCalc.toFixed(3) : m.quantity_mt.toFixed(3)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      Mass (MT) = (Observed Volume × VCF + Trim Correction) × Density@15°C ÷ 1000. Calculation per ASTM D1250 tables.
+                      Fields showing "—" were not recorded for this measurement source.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {showVcf && vcfMeasurements.length === 0 && (
+                <div className="border-t border-slate-100 dark:border-slate-700 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                  No measurement data with VCF chain available for this case.
+                </div>
+              )}
+            </div>
 
             {/* Actions + threshold legend */}
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 space-y-3">

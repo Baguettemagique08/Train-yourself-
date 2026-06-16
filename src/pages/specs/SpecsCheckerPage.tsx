@@ -25,6 +25,14 @@ const MARPOL_SULPHUR: Record<string, { global: number; eca: number }> = {
   Biofuel: { global: 0.50, eca: 0.10 },
 }
 
+// ── CCAI calculation ───────────────────────────────────────────────────────────
+function calcCCAI(density: number | null, viscosity50: number | null): number | null {
+  if (!density || !viscosity50 || viscosity50 <= 0) return null
+  const inner = Math.log10(viscosity50 + 0.85)
+  if (inner <= 0) return null
+  return density - 141 * Math.log10(inner) - 80.6
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface SpecRow {
   id: string
@@ -34,6 +42,7 @@ interface SpecRow {
   contractMin: string
   contractMax: string
   labResult: string
+  isCalculated?: boolean
 }
 
 function computeVariance(labResult: string, contractMin: string, contractMax: string): number | null {
@@ -285,7 +294,7 @@ export default function SpecsCheckerPage() {
     setTimeout(() => {
       const extracted = simulateExtraction(uploadedFile.name, spec.params)
       let n = 0
-      setRows(spec.params.map((param) => ({
+      const newRows: SpecRow[] = spec.params.map((param) => ({
         id: `coq-${isoEdition}-${isoGrade}-${++n}`,
         parameter: param.name,
         unit: param.unit,
@@ -293,7 +302,26 @@ export default function SpecsCheckerPage() {
         contractMin: param.min != null ? String(param.min) : '',
         contractMax: param.max != null ? String(param.max) : '',
         labResult: extracted[param.name] ?? '',
-      })))
+      }))
+
+      // Auto-compute CCAI from density@15°C and kinematic viscosity@50°C
+      const densityRow = newRows.find((r) =>
+        r.parameter.toLowerCase().includes('density') && r.labResult !== '',
+      )
+      const viscosityRow = newRows.find((r) =>
+        (r.parameter.toLowerCase().includes('viscosity') || r.parameter.toLowerCase().includes('kinematic')) &&
+        r.labResult !== '',
+      )
+      const ccaiRow = newRows.find((r) => r.parameter.toLowerCase().includes('ccai'))
+      if (densityRow && viscosityRow && ccaiRow && ccaiRow.labResult === '') {
+        const computedCCAI = calcCCAI(parseFloat(densityRow.labResult), parseFloat(viscosityRow.labResult))
+        if (computedCCAI !== null) {
+          ccaiRow.labResult = computedCCAI.toFixed(0)
+          ccaiRow.isCalculated = true
+        }
+      }
+
+      setRows(newRows)
       setLabRef(uploadedFile.name.replace(/\.[^.]+$/, ''))
       setAnalysisRun(true)
       setAnalyzing(false)
@@ -688,6 +716,24 @@ export default function SpecsCheckerPage() {
           </div>
         </div>
 
+        {/* PSC Risk — sulphur non-conformance */}
+        {rows.some((r) => {
+          const status = computeStatus(r.labResult, r.contractMin, r.contractMax)
+          return status === 'off_spec' && r.parameter.toLowerCase().includes('sulphur')
+        }) && (
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400">Port State Control Risk — Sulphur Non-Conformance</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                Off-spec sulphur content may trigger PSC detention and MARPOL Annex VI penalties at the next port call.
+                Notify flag state, P&amp;I club, and master immediately. File a Fuel Oil Non-Availability Report (FONAR)
+                if the non-conformance is with a MARPOL-regulated limit. Document decision to continue or stop fuel use.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Analysis provenance tag */}
         {analysisRun && uploadedFile && (
           <div className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/15 px-4 py-2.5">
@@ -780,20 +826,25 @@ export default function SpecsCheckerPage() {
 
                       {/* Lab Result */}
                       <td className="px-4 py-2.5">
-                        <input
-                          type="number" step="any"
-                          className={cn(
-                            'w-24 rounded border px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1',
-                            status === 'off_spec'
-                              ? 'border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 focus:border-red-500 focus:ring-red-200'
-                              : status === 'warning'
-                              ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-300 focus:border-amber-500 focus:ring-amber-200'
-                              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-blue-500',
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number" step="any"
+                            className={cn(
+                              'w-24 rounded border px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1',
+                              status === 'off_spec'
+                                ? 'border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 focus:border-red-500 focus:ring-red-200'
+                                : status === 'warning'
+                                ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-300 focus:border-amber-500 focus:ring-amber-200'
+                                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-blue-500',
+                            )}
+                            value={row.labResult}
+                            onChange={(e) => updateRow(row.id, 'labResult', e.target.value)}
+                            placeholder="—"
+                          />
+                          {row.labResult && row.isCalculated && (
+                            <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">(calc.)</span>
                           )}
-                          value={row.labResult}
-                          onChange={(e) => updateRow(row.id, 'labResult', e.target.value)}
-                          placeholder="—"
-                        />
+                        </div>
                       </td>
 
                       {/* Variance */}
