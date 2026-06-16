@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { mockIngestDocuments } from '@/data/ingestionData'
+import { mockIngestDocuments, ingestDocRegistry } from '@/data/ingestionData'
 import { useAuth } from '@/hooks/useAuth'
 import {
   classifyByFilename, summarizeFields,
@@ -18,7 +18,12 @@ export function useIngestionInbox() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const patch = useCallback((id: string, next: Partial<IngestDocument>) => {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...next } : d)))
+    setDocuments((prev) => prev.map((d) => {
+      if (d.id !== id) return d
+      const updated = { ...d, ...next }
+      ingestDocRegistry.set(id, updated)
+      return updated
+    }))
   }, [])
 
   /** Simulate the pipeline: uploading → queued → processing → ready/needs_review. */
@@ -43,6 +48,7 @@ export function useIngestionInbox() {
       }
       return doc
     })
+    created.forEach((doc) => ingestDocRegistry.set(doc.id, doc))
     setDocuments((prev) => [...created, ...prev])
 
     // Advance each new document through the pipeline.
@@ -98,7 +104,7 @@ export function useIngestionInbox() {
 
 export function useDocumentReview(id: string | undefined) {
   const { currentUser } = useAuth()
-  const base = useMemo(() => mockIngestDocuments.find((d) => d.id === id) ?? null, [id])
+  const base = useMemo(() => ingestDocRegistry.get(id ?? '') ?? mockIngestDocuments.find((d) => d.id === id) ?? null, [id])
 
   const [doc, setDoc] = useState<IngestDocument | null>(base)
   const [loadedId, setLoadedId] = useState(id)

@@ -1,5 +1,9 @@
 import type { IngestDocument, IngestField } from '@/lib/ingestion'
 
+// Mutable registry for uploaded documents so useDocumentReview can find them
+// even though they only exist in useIngestionInbox's local React state.
+export const ingestDocRegistry = new Map<string, IngestDocument>()
+
 // Helper to keep field definitions terse.
 let fid = 0
 function f(
@@ -130,3 +134,6 @@ export const mockIngestDocuments: IngestDocument[] = [
     fields: [],
   },
 ]
+
+// Pre-populate registry with static mock documents so the lookup always works.
+mockIngestDocuments.forEach((d) => ingestDocRegistry.set(d.id, d))
