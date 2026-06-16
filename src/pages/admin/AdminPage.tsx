@@ -6,7 +6,7 @@ import { DRAFT_TYPE_OPTIONS } from '@/lib/constants'
 import type { DraftType, Template, Threshold } from '@/types'
 
 // ── Tab types ──────────────────────────────────────────────────────────────────
-type AdminTab = 'thresholds' | 'templates' | 'users' | 'roles'
+type AdminTab = 'thresholds' | 'templates' | 'users' | 'roles' | 'audit'
 
 // ── Mock admin users (richer than mockUsers) ───────────────────────────────────
 const ADMIN_USERS = [
@@ -727,6 +727,165 @@ function RolesTab() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TAB: AUDIT LOG
+// ─────────────────────────────────────────────────────────────────────────────
+
+type AuditOperation = 'INSERT' | 'UPDATE' | 'DELETE'
+
+interface AuditEntry {
+  id: string
+  user_name: string
+  table_name: string
+  record_id: string
+  operation: AuditOperation
+  changed_fields: string[]
+  created_at: string
+}
+
+const MOCK_AUDIT_ENTRIES: AuditEntry[] = [
+  { id: 'al1', user_name: 'James Hargreaves', table_name: 'cases', record_id: 'c1', operation: 'UPDATE', changed_fields: ['status', 'priority'], created_at: '2026-06-14T08:31:00Z' },
+  { id: 'al2', user_name: 'Sophie Lindqvist', table_name: 'spec_checks', record_id: 'sc3', operation: 'INSERT', changed_fields: ['lab_result', 'status', 'deviation_pct'], created_at: '2026-06-14T08:15:00Z' },
+  { id: 'al3', user_name: 'Olivia Le Blond', table_name: 'drafts', record_id: 'dr1', operation: 'UPDATE', changed_fields: ['status', 'approved_by', 'approved_at'], created_at: '2026-06-13T17:44:00Z' },
+  { id: 'al4', user_name: 'Rajan Mehta', table_name: 'measurements', record_id: 'm5', operation: 'INSERT', changed_fields: ['quantity_mt', 'temperature_c', 'density_at_15c_kgm3'], created_at: '2026-06-13T16:22:00Z' },
+  { id: 'al5', user_name: 'James Hargreaves', table_name: 'cases', record_id: 'c2', operation: 'UPDATE', changed_fields: ['status'], created_at: '2026-06-13T15:05:00Z' },
+  { id: 'al6', user_name: 'Sophie Lindqvist', table_name: 'documents', record_id: 'd7', operation: 'INSERT', changed_fields: ['filename', 'document_type', 'storage_path'], created_at: '2026-06-13T14:30:00Z' },
+  { id: 'al7', user_name: 'Olivia Le Blond', table_name: 'thresholds', record_id: 'th2', operation: 'UPDATE', changed_fields: ['warning_threshold', 'critical_threshold'], created_at: '2026-06-12T11:20:00Z' },
+  { id: 'al8', user_name: 'Rajan Mehta', table_name: 'cases', record_id: 'c3', operation: 'INSERT', changed_fields: ['reference', 'status', 'vessel_id', 'port_id', 'supplier_id'], created_at: '2026-06-12T09:45:00Z' },
+]
+
+const OP_COLORS: Record<AuditOperation, string> = {
+  INSERT: 'bg-green-100 text-green-700',
+  UPDATE: 'bg-blue-100 text-blue-700',
+  DELETE: 'bg-red-100 text-red-700',
+}
+
+function AuditLogTab() {
+  const [search, setSearch] = useState('')
+  const [opFilter, setOpFilter] = useState<AuditOperation | ''>('')
+  const [tableFilter, setTableFilter] = useState('')
+
+  const tables = Array.from(new Set(MOCK_AUDIT_ENTRIES.map((e) => e.table_name))).sort()
+
+  const filtered = MOCK_AUDIT_ENTRIES.filter((e) => {
+    if (opFilter && e.operation !== opFilter) return false
+    if (tableFilter && e.table_name !== tableFilter) return false
+    if (search) {
+      const q = search.toLowerCase()
+      if (!e.user_name.toLowerCase().includes(q) && !e.table_name.toLowerCase().includes(q) && !e.record_id.toLowerCase().includes(q)) return false
+    }
+    return true
+  })
+
+  const exportCsv = () => {
+    const rows = [
+      ['Timestamp', 'User', 'Table', 'Record ID', 'Operation', 'Changed Fields'],
+      ...filtered.map((e) => [e.created_at, e.user_name, e.table_name, e.record_id, e.operation, e.changed_fields.join('; ')]),
+    ]
+    const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">Audit Log</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Tamper-evident record of all data changes. Written by database triggers — cannot be modified.
+          </p>
+        </div>
+        <button
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search user, table, record…"
+          className="flex-1 min-w-48 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          value={opFilter}
+          onChange={(e) => setOpFilter(e.target.value as AuditOperation | '')}
+        >
+          <option value="">All operations</option>
+          <option value="INSERT">INSERT</option>
+          <option value="UPDATE">UPDATE</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+        <select
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          value={tableFilter}
+          onChange={(e) => setTableFilter(e.target.value)}
+        >
+          <option value="">All tables</option>
+          {tables.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              {['Timestamp', 'User', 'Table', 'Record', 'Operation', 'Changed Fields'].map((h) => (
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">No entries match your filters</td>
+              </tr>
+            )}
+            {filtered.map((entry) => (
+              <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap font-mono">
+                  {new Date(entry.created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                </td>
+                <td className="px-4 py-3 font-medium text-slate-900">{entry.user_name}</td>
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs bg-slate-100 text-slate-700 rounded px-1.5 py-0.5">{entry.table_name}</span>
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-500">{entry.record_id}</td>
+                <td className="px-4 py-3">
+                  <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold', OP_COLORS[entry.operation])}>
+                    {entry.operation}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500">
+                  {entry.changed_fields.join(', ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-xs text-slate-400 text-center">
+        Showing {filtered.length} of {MOCK_AUDIT_ENTRIES.length} entries · In production, this queries the append-only <span className="font-mono">audit_logs</span> table
+      </p>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
@@ -771,6 +930,12 @@ export default function AdminPage() {
               icon={<Shield className="h-4 w-4" />}
               label="Roles"
             />
+            <TabButton
+              active={activeTab === 'audit'}
+              onClick={() => setActiveTab('audit')}
+              icon={<Settings className="h-4 w-4" />}
+              label="Audit Log"
+            />
           </div>
         </div>
 
@@ -780,6 +945,7 @@ export default function AdminPage() {
           {activeTab === 'templates' && <TemplatesTab />}
           {activeTab === 'users' && <UsersTab />}
           {activeTab === 'roles' && <RolesTab />}
+          {activeTab === 'audit' && <AuditLogTab />}
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import {
 import type { FuelType, FuelReadinessStatus } from '@/types'
 
 /** Reference "now" for the seeded data — keeps review-due states stable. */
-const REFERENCE_NOW = new Date('2026-06-14T09:00:00Z')
+const REFERENCE_NOW = new Date()
 const DAY = 86_400_000
 const REVIEW_WINDOW_DAYS = 60
 

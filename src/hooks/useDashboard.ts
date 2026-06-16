@@ -6,7 +6,6 @@ import {
   mockActivities,
   mockSpecsChecks,
   mockFuelReadiness,
-  mockDisputeTrend,
 } from '@/data/mockData'
 import type {
   Case,
@@ -25,7 +24,7 @@ import type {
  * use the real wall clock; anchoring it here keeps due/overdue states stable
  * against the static sample data regardless of the host clock.
  */
-const REFERENCE_NOW = new Date('2026-06-14T09:00:00Z')
+const REFERENCE_NOW = new Date()
 
 const OPEN_STATUSES: CaseStatus[] = ['open', 'under_review', 'pending_response', 'escalated']
 
@@ -174,6 +173,27 @@ function makeKpi(value: number, delta: number, higherIsWorse: boolean): Dashboar
   }
 }
 
+function buildDisputeTrend() {
+  const now = new Date()
+  const weeks = []
+  for (let i = 7; i >= 0; i--) {
+    const weekStart = new Date(now.getTime() - i * 7 * DAY_MS)
+    const label = weekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    // Count cases opened in that week window.
+    const opened = mockCases.filter((c) => {
+      const d = new Date(c.opened_at).getTime()
+      return d >= weekStart.getTime() && d < weekStart.getTime() + 7 * DAY_MS
+    }).length
+    const closed = mockCases.filter((c) => {
+      if (!c.closed_at) return false
+      const d = new Date(c.closed_at).getTime()
+      return d >= weekStart.getTime() && d < weekStart.getTime() + 7 * DAY_MS
+    }).length
+    weeks.push({ period_start: weekStart.toISOString(), label, opened, closed })
+  }
+  return weeks
+}
+
 function computeDashboard(): DashboardData {
   const caseRef = new Map(mockCases.map((c) => [c.id, c]))
 
@@ -251,7 +271,7 @@ function computeDashboard(): DashboardData {
     })
 
   return {
-    generated_at: REFERENCE_NOW.toISOString(),
+    generated_at: new Date().toISOString(),
     kpis: {
       open_cases: makeKpi(openCases.length, 2, true),
       urgent_cases: makeKpi(urgentCases.length, 1, true),
@@ -265,7 +285,7 @@ function computeDashboard(): DashboardData {
     spec_alerts,
     readiness_due,
     counterparty_risk: buildCounterpartyRisk(),
-    dispute_trend: mockDisputeTrend,
+    dispute_trend: buildDisputeTrend(),
   }
 }
 

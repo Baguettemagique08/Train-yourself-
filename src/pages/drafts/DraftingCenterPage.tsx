@@ -440,13 +440,16 @@ export default function DraftingCenterPage() {
 
                   {/* Toolbar */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={handleSave}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      <Save className="h-3.5 w-3.5" />
-                      {saved ? 'Saved' : 'Save'}
-                    </button>
+                    <div className="flex flex-col items-end gap-1">
+                      <button
+                        onClick={handleSave}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                        {saved ? 'Saved' : 'Save'}
+                      </button>
+                      <span className="text-xs text-slate-400">Demo mode — session only</span>
+                    </div>
 
                     {selectedDraft.status === 'draft' && (
                       <button
@@ -469,13 +472,16 @@ export default function DraftingCenterPage() {
                     )}
 
                     {selectedDraft.status === 'approved' && (
-                      <button
-                        onClick={() => handleStatusChange('sent')}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                        Send
-                      </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          onClick={() => handleStatusChange('sent')}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          Mark as Sent
+                        </button>
+                        <span className="text-xs text-amber-600">Demo mode — no email dispatched</span>
+                      </div>
                     )}
                   </div>
                 </div>

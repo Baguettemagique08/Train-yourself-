@@ -12,6 +12,19 @@ import {
 } from '@/lib/iso8217'
 import type { SpecStatus } from '@/types'
 
+// MARPOL Annex VI sulphur limits (mass fraction, %)
+const MARPOL_SULPHUR: Record<string, { global: number; eca: number }> = {
+  VLSFO: { global: 0.50, eca: 0.10 },
+  ULSFO: { global: 0.50, eca: 0.10 },
+  LSMGO: { global: 0.50, eca: 0.10 },
+  MGO: { global: 0.50, eca: 0.10 },
+  HSFO: { global: 0.50, eca: 0.10 },
+  B24: { global: 0.50, eca: 0.10 },
+  B100: { global: 0.50, eca: 0.10 },
+  HVO: { global: 0.50, eca: 0.10 },
+  Biofuel: { global: 0.50, eca: 0.10 },
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface SpecRow {
   id: string
@@ -222,7 +235,7 @@ export default function SpecsCheckerPage() {
     setAnalysisRun(false)
     const c = mockCases.find((mc) => mc.id === caseId)
     if (c?.fuel_type) {
-      const suggestion = MARKET_TO_ISO_GRADE[c.fuel_type.toUpperCase()]
+      const suggestion = MARKET_TO_ISO_GRADE[c.fuel_type.toUpperCase()] ?? MARKET_TO_ISO_GRADE[c.fuel_type]
       if (suggestion) { setIsoEdition(suggestion.edition); setIsoGrade(suggestion.grade) }
     }
   }, [])
@@ -459,13 +472,6 @@ export default function SpecsCheckerPage() {
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                     {currentIsoSpec.params.length} parameters ·{' '}
                     {currentIsoSpec.category === 'residual' ? 'Residual fuel' : 'Distillate fuel'}
-                    {MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
-                      MARKET_TO_ISO_GRADE[k].grade === isoGrade) ?? '']?.note &&
-                      <span className="ml-1 text-amber-600 dark:text-amber-400">
-                        · {MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
-                          MARKET_TO_ISO_GRADE[k].grade === isoGrade) ?? '']?.note}
-                      </span>
-                    }
                   </p>
                 )}
               </div>
@@ -725,12 +731,24 @@ export default function SpecsCheckerPage() {
                     <tr key={row.id} className={cn('transition-colors hover:brightness-95', bg)}>
                       {/* Parameter */}
                       <td className="px-4 py-2.5">
-                        <input
-                          type="text"
-                          className="w-52 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
-                          value={row.parameter}
-                          onChange={(e) => updateRow(row.id, 'parameter', e.target.value)}
-                        />
+                        <div>
+                          <input
+                            type="text"
+                            className="w-52 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
+                            value={row.parameter}
+                            onChange={(e) => updateRow(row.id, 'parameter', e.target.value)}
+                          />
+                          {row.parameter.toLowerCase().includes('sulphur') && selectedCase?.fuel_type && MARPOL_SULPHUR[selectedCase.fuel_type] && (
+                            <div className="mt-0.5 flex gap-1 flex-wrap">
+                              <span className="inline-flex items-center rounded px-1 py-0.5 text-xs bg-purple-50 text-purple-700 border border-purple-100">
+                                MARPOL Global ≤{MARPOL_SULPHUR[selectedCase.fuel_type].global}%
+                              </span>
+                              <span className="inline-flex items-center rounded px-1 py-0.5 text-xs bg-purple-50 text-purple-700 border border-purple-100">
+                                ECA ≤{MARPOL_SULPHUR[selectedCase.fuel_type].eca}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Unit */}

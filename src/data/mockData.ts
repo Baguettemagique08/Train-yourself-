@@ -326,11 +326,15 @@ export const mockCases: Case[] = [
     assigned_to: 'u1',
     assigned_user: mockUsers[0],
     description: 'Quantity short of 50 MT resolved by supplementary delivery. Case closed following confirmation of corrected BDN.',
-    
+
     created_at: '2026-04-12T08:00:00Z',
     updated_at: '2026-04-25T17:00:00Z',
   },
 ]
+
+// Module-level registry so mutations (create/update) survive navigation.
+export const caseRegistry = new Map<string, Case>()
+mockCases.forEach((c) => caseRegistry.set(c.id, c))
 
 // ── Documents ─────────────────────────────────────────────────────────────────
 

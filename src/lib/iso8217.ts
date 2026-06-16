@@ -444,18 +444,28 @@ export function getIsoSpec(edition: IsoEdition, grade: string): IsoGradeSpec | u
 }
 
 // Common market fuel names → closest ISO 8217:2017 grade
-export const MARKET_TO_ISO_GRADE: Record<string, { grade: string; edition: IsoEdition; note?: string }> = {
-  VLSFO:  { grade: 'RMG380', edition: '2017', note: 'S ≤ 0.50% statutory limit applies' },
-  ULSFO:  { grade: 'RMD180', edition: '2017', note: 'S ≤ 0.10% statutory limit applies' },
-  HFO:    { grade: 'RMG380', edition: '2017' },
-  IFO380: { grade: 'RMG380', edition: '2017' },
-  IFO180: { grade: 'RME180', edition: '2017' },
-  LSMGO:  { grade: 'DMA',    edition: '2017', note: 'S ≤ 0.10% statutory limit applies' },
-  MGO:    { grade: 'DMA',    edition: '2017' },
-  MDO:    { grade: 'DMB',    edition: '2017' },
-  LSFO:   { grade: 'RMG380', edition: '2017', note: 'S ≤ 0.50% statutory limit applies' },
-  HSFO:   { grade: 'RMG380', edition: '2017' },
-  B24:    { grade: 'DFB',    edition: '2017', note: 'FAME blend — verify FAME content limit' },
+export const MARKET_TO_ISO_GRADE: Partial<Record<string, { edition: IsoEdition; grade: string }>> = {
+  // Standard residual grades
+  VLSFO: { edition: '2017', grade: 'RMG380' },
+  HSFO: { edition: '2017', grade: 'RMG380' },
+  ULSFO: { edition: '2017', grade: 'RMG380' },
+  IFO380: { edition: '2017', grade: 'RMG380' },
+  IFO180: { edition: '2017', grade: 'RME180' },
+  // Distillate grades
+  MGO: { edition: '2017', grade: 'DMA' },
+  LSMGO: { edition: '2017', grade: 'DMA' },
+  MDO: { edition: '2017', grade: 'DMB' },
+  // FAME blend grades (ISO 8217:2017 Annex B)
+  B24: { edition: '2017', grade: 'DFB' },
+  B100: { edition: '2017', grade: 'DFB' },
+  HVO: { edition: '2017', grade: 'DFA' },
+  Biofuel: { edition: '2017', grade: 'DFA' },
+  // Alternative fuels — no ISO 8217 grade applies
+  LNG: undefined,
+  LPG: undefined,
+  Methanol: undefined,
+  Ammonia: undefined,
+  Other: undefined,
 }
 
 export const ISO_EDITIONS: { value: IsoEdition; label: string }[] = [

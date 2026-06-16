@@ -1,18 +1,21 @@
 import { useState, useMemo } from 'react'
-import { mockCases } from '@/data/mockData'
+import { mockCases, caseRegistry } from '@/data/mockData'
 import type { Case, FilterState } from '@/types'
 
 export function useCases() {
-  const [cases, setCases] = useState<Case[]>(mockCases)
+  const [cases, setCases] = useState<Case[]>([...caseRegistry.values()])
 
   const addCase = (newCase: Case) => {
-    setCases((prev) => [newCase, ...prev])
+    caseRegistry.set(newCase.id, newCase)
+    setCases([...caseRegistry.values()])
   }
 
   const updateCase = (id: string, updates: Partial<Case>) => {
-    setCases((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c))
-    )
+    const existing = caseRegistry.get(id)
+    if (!existing) return
+    const updated = { ...existing, ...updates, updated_at: new Date().toISOString() }
+    caseRegistry.set(id, updated)
+    setCases([...caseRegistry.values()])
   }
 
   return { cases, addCase, updateCase }
@@ -42,20 +45,20 @@ export function useFilteredCases(cases: Case[], filters: Partial<FilterState>) {
 export function useCaseById(id: string | undefined) {
   return useMemo(() => {
     if (!id) return undefined
-    return mockCases.find((c) => c.id === id)
+    return caseRegistry.get(id) ?? mockCases.find((c) => c.id === id)
   }, [id])
 }
 
 export function useCaseStats() {
   return useMemo(() => {
-    const total = mockCases.length
-    const open = mockCases.filter((c) => c.status === 'open').length
-    const escalated = mockCases.filter((c) => c.status === 'escalated').length
-    const underReview = mockCases.filter((c) => c.status === 'under_review').length
-    const pendingResponse = mockCases.filter((c) => c.status === 'pending_response').length
-    const resolved = mockCases.filter((c) => c.status === 'resolved').length
-    const closed = mockCases.filter((c) => c.status === 'closed').length
-
+    const all = [...caseRegistry.values()]
+    const total = all.length
+    const open = all.filter((c) => c.status === 'open').length
+    const escalated = all.filter((c) => c.status === 'escalated').length
+    const underReview = all.filter((c) => c.status === 'under_review').length
+    const pendingResponse = all.filter((c) => c.status === 'pending_response').length
+    const resolved = all.filter((c) => c.status === 'resolved').length
+    const closed = all.filter((c) => c.status === 'closed').length
     return { total, open, escalated, underReview, pendingResponse, resolved, closed }
   }, [])
 }
