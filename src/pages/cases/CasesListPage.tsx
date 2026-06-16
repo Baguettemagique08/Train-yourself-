@@ -40,6 +40,7 @@ export function CasesListPage() {
   const handleCaseCreated = (newCase: Case) => {
     caseRegistry.set(newCase.id, newCase)
     setCases([...caseRegistry.values()])
+    window.dispatchEvent(new Event('caseRegistryUpdated'))
     navigate(`/cases/${newCase.id}`)
   }
 
@@ -289,6 +290,8 @@ function NewCaseModal({
     const ref = generateCaseRef()
 
     const deliveryId = `del-${Date.now()}`
+    const deliveryDateMs = form.delivery_date ? new Date(form.delivery_date).getTime() : Date.now()
+    const DAY_MS = 24 * 60 * 60 * 1000
     const newCase: Case = {
       id: `c-${Date.now()}`,
       reference: ref,
@@ -309,6 +312,8 @@ function NewCaseModal({
       status: 'open',
       description: form.description.trim(),
       opened_at: now,
+      claim_notice_deadline: new Date(deliveryDateMs + 30 * DAY_MS).toISOString(),
+      claim_time_bar: new Date(deliveryDateMs + 365 * DAY_MS).toISOString(),
       delivery: form.delivery_date ? {
         id: deliveryId,
         delivery_date: new Date(form.delivery_date).toISOString(),

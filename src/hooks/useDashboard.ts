@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  caseRegistry,
   mockCases,
   mockDrafts,
   mockDocuments,
@@ -96,7 +97,7 @@ const URGENCY_RANK: Record<DueUrgency, number> = { overdue: 0, today: 1, soon: 2
 const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 }
 
 function buildActionItems(): DashboardActionItem[] {
-  return mockCases
+  return [...caseRegistry.values()]
     .filter((c) => OPEN_STATUSES.includes(c.status))
     .map((c) => {
       const due = dueDateFor(c)
@@ -129,7 +130,7 @@ function buildActionItems(): DashboardActionItem[] {
 function buildCounterpartyRisk(): DashboardCounterpartyRisk[] {
   const bySupplier = new Map<string, DashboardCounterpartyRisk>()
 
-  for (const c of mockCases) {
+  for (const c of caseRegistry.values()) {
     if (!c.supplier) continue
     const key = c.supplier.id
     const entry = bySupplier.get(key) ?? {
@@ -180,11 +181,12 @@ function buildDisputeTrend() {
     const weekStart = new Date(now.getTime() - i * 7 * DAY_MS)
     const label = weekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     // Count cases opened in that week window.
-    const opened = mockCases.filter((c) => {
+    const allCases = [...caseRegistry.values()]
+    const opened = allCases.filter((c) => {
       const d = new Date(c.opened_at).getTime()
       return d >= weekStart.getTime() && d < weekStart.getTime() + 7 * DAY_MS
     }).length
-    const closed = mockCases.filter((c) => {
+    const closed = allCases.filter((c) => {
       if (!c.closed_at) return false
       const d = new Date(c.closed_at).getTime()
       return d >= weekStart.getTime() && d < weekStart.getTime() + 7 * DAY_MS
@@ -195,10 +197,11 @@ function buildDisputeTrend() {
 }
 
 function computeDashboard(): DashboardData {
-  const caseRef = new Map(mockCases.map((c) => [c.id, c]))
+  const allCases = [...caseRegistry.values()]
+  const caseRef = new Map(allCases.map((c) => [c.id, c]))
 
-  const openCases = mockCases.filter((c) => OPEN_STATUSES.includes(c.status))
-  const urgentCases = mockCases.filter((c) => c.priority === 'urgent' || c.status === 'escalated')
+  const openCases = allCases.filter((c) => OPEN_STATUSES.includes(c.status))
+  const urgentCases = allCases.filter((c) => c.priority === 'urgent' || c.status === 'escalated')
   const pendingDrafts = mockDrafts.filter((d) =>
     d.status === 'draft' || d.status === 'under_review' || d.status === 'approved',
   )
@@ -304,7 +307,15 @@ export interface UseDashboardResult {
  */
 export function useDashboard(): UseDashboardResult {
   const [isLoading, setIsLoading] = useState(true)
-  const data = useMemo(() => computeDashboard(), [])
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const handler = () => setTick((t) => t + 1)
+    window.addEventListener('caseRegistryUpdated', handler)
+    return () => window.removeEventListener('caseRegistryUpdated', handler)
+  }, [])
+
+  const data = useMemo(() => computeDashboard(), [tick])
 
   useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 500)
