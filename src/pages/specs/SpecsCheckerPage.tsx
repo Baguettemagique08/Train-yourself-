@@ -1,11 +1,14 @@
-import { useState, useCallback } from 'react'
-import { CheckCircle, AlertTriangle, XCircle, Plus, Download, Save, BookOpen, ChevronDown } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
+import {
+  CheckCircle, AlertTriangle, XCircle, Plus, Download, Save,
+  BookOpen, ChevronDown, UploadCloud, FileText, X, FlaskConical, Loader2,
+} from 'lucide-react'
 import { mockCases, mockSpecsChecks } from '@/data/mockData'
 import { cn, formatDate, specStatusColor, specStatusLabel } from '@/lib/utils'
 import {
-  ISO_EDITIONS, ISO_8217_SPECS, MARKET_TO_ISO_GRADE,
+  ISO_EDITIONS, MARKET_TO_ISO_GRADE,
   getIsoEditionGrades, getIsoSpec,
-  type IsoEdition,
+  type IsoEdition, type IsoParamSpec,
 } from '@/lib/iso8217'
 import type { SpecStatus } from '@/types'
 
@@ -30,76 +33,146 @@ function computeVariance(labResult: string, contractMin: string, contractMax: st
   return null
 }
 
-function computeStatus(
-  labResult: string,
-  contractMin: string,
-  contractMax: string
-): SpecStatus {
+function computeStatus(labResult: string, contractMin: string, contractMax: string): SpecStatus {
   const lab = parseFloat(labResult)
   if (isNaN(lab)) return 'not_tested'
   const max = parseFloat(contractMax)
   const min = parseFloat(contractMin)
   if (!isNaN(max) && lab > max) return 'off_spec'
   if (!isNaN(min) && lab < min) return 'off_spec'
-  // at-limit warning: within 2% of limit
   if (!isNaN(max) && lab > max * 0.98) return 'warning'
   if (!isNaN(min) && lab < min * 1.02) return 'warning'
   return 'ok'
 }
 
+// ── Extraction simulation ──────────────────────────────────────────────────────
+
+function hashString(str: string): number {
+  let h = 0x811c9dc5 >>> 0
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h
+}
+
+function seededRandom(seed: number) {
+  let s = seed >>> 0
+  return () => {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0
+    return s / 0xffffffff
+  }
+}
+
+function precisionForParam(name: string): number {
+  if (name.includes('Density'))                  return 4
+  if (name.includes('Viscosity'))                return 1
+  if (name.includes('Sulphur'))                  return 3
+  if (name.includes('Flash'))                    return 1
+  if (name.includes('CCAI'))                     return 0
+  if (name.includes('Aluminium'))                return 0
+  if (name.includes('Sodium'))                   return 0
+  if (name.includes('Vanadium'))                 return 0
+  if (name.includes('Zinc'))                     return 0
+  if (name.includes('Phosphorus'))               return 0
+  if (name.includes('Calcium'))                  return 0
+  if (name.includes('Water'))                    return 2
+  if (name.includes('Ash'))                      return 3
+  if (name.includes('Micro Carbon') || name.includes('MCR')) return 2
+  if (name.includes('Total Sediment'))           return 3
+  if (name.includes('Acid Number'))              return 2
+  if (name.includes('Cetane'))                   return 0
+  if (name.includes('Pour Point'))               return 0
+  if (name.includes('Cloud Point'))              return 0
+  if (name.includes('FAME'))                     return 1
+  if (name.includes('Lubricity'))                return 0
+  if (name.includes('Oxidation'))                return 1
+  if (name.includes('Hydrogen Sulphide'))        return 2
+  return 2
+}
+
+function simulateExtraction(filename: string, params: IsoParamSpec[]): Record<string, string> {
+  const rng = seededRandom(hashString(filename))
+  const results: Record<string, string> = {}
+
+  for (const param of params) {
+    // Skip non-numeric / informational entries
+    if (param.min === undefined && param.max === undefined) continue
+    if (param.note?.includes('Statutory') || param.note?.includes('Fail if') ||
+        param.note?.includes('Not permitted') || param.note?.includes('FAME blend grade')) continue
+    // Skip ULO composite criterion
+    if (param.name.includes('Used Lube Oil')) continue
+
+    const r = rng()
+    const dp = precisionForParam(param.name)
+    let value: number
+
+    if (param.max !== undefined && param.min !== undefined) {
+      // Viscosity or similar bounded range
+      const range = param.max - param.min
+      value = r < 0.12 ? param.max * 1.04 + rng() * range * 0.1
+            : r < 0.22 ? param.max * 0.99 + rng() * param.max * 0.01
+            : param.min + rng() * range * 0.92
+    } else if (param.max !== undefined) {
+      value = r < 0.15 ? param.max * (1.02 + rng() * 0.12)
+            : r < 0.25 ? param.max * (0.984 + rng() * 0.012)
+            : param.max * (0.30 + rng() * 0.65)
+    } else if (param.min !== undefined) {
+      value = r < 0.15 ? param.min * (0.84 + rng() * 0.13)
+            : r < 0.25 ? param.min * (1.00 + rng() * 0.018)
+            : param.min * (1.04 + rng() * 0.60)
+    } else {
+      continue
+    }
+
+    results[param.name] = value.toFixed(dp)
+  }
+  return results
+}
+
+// ── Status badge ───────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: SpecStatus }) {
-  if (status === 'ok') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-        <CheckCircle className="h-3 w-3" />
-        OK
-      </span>
-    )
-  }
-  if (status === 'warning') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-        <AlertTriangle className="h-3 w-3" />
-        At Limit
-      </span>
-    )
-  }
-  if (status === 'off_spec') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-        <XCircle className="h-3 w-3" />
-        Off-Spec
-      </span>
-    )
-  }
+  if (status === 'ok') return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-xs font-semibold text-green-700 dark:text-green-400">
+      <CheckCircle className="h-3 w-3" /> OK
+    </span>
+  )
+  if (status === 'warning') return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+      <AlertTriangle className="h-3 w-3" /> At Limit
+    </span>
+  )
+  if (status === 'off_spec') return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-semibold text-red-700 dark:text-red-400">
+      <XCircle className="h-3 w-3" /> Off-Spec
+    </span>
+  )
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
       Not Tested
     </span>
   )
 }
 
 function rowBgClass(status: SpecStatus): string {
-  if (status === 'off_spec') return 'bg-red-50'
-  if (status === 'warning') return 'bg-amber-50'
+  if (status === 'off_spec') return 'bg-red-50 dark:bg-red-900/10'
+  if (status === 'warning') return 'bg-amber-50 dark:bg-amber-900/10'
   return ''
 }
 
-// ── Build initial rows from mock spec checks ───────────────────────────────────
+// ── Build rows from mock spec checks ──────────────────────────────────────────
 function buildRows(caseId: string): SpecRow[] {
   const checks = mockSpecsChecks.filter((sc) => sc.case_id === caseId)
   if (checks.length === 0) {
-    // Default empty row set
     return [
-      { id: 'sr-default-1', parameter: 'Density at 15°C', unit: 'kg/m³', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-2', parameter: 'Kinematic Viscosity at 50°C', unit: 'cSt', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-3', parameter: 'Flash Point', unit: '°C', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-4', parameter: 'Sulphur Content', unit: '% m/m', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-5', parameter: 'Water Content', unit: '% v/v', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-6', parameter: 'Ash Content', unit: '% m/m', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-7', parameter: 'CCAI', unit: '', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-8', parameter: 'Net Heat Value', unit: 'MJ/kg', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
-      { id: 'sr-default-9', parameter: 'Aluminium + Silicon', unit: 'mg/kg', bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-1', parameter: 'Density at 15°C',                 unit: 'kg/m³',   bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-2', parameter: 'Kinematic Viscosity at 50°C',     unit: 'cSt',     bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-3', parameter: 'Flash Point',                     unit: '°C',      bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-4', parameter: 'Sulphur Content',                 unit: '% m/m',   bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-5', parameter: 'Water Content',                   unit: '% v/v',   bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-6', parameter: 'Ash Content',                     unit: '% m/m',   bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-7', parameter: 'CCAI',                            unit: '',        bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
+      { id: 'sr-8', parameter: 'Aluminium + Silicon',             unit: 'mg/kg',   bdnValue: '', contractMin: '', contractMax: '', labResult: '' },
     ]
   }
   return checks.map((sc) => ({
@@ -117,11 +190,11 @@ let customRowCounter = 0
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function SpecsCheckerPage() {
-  const [selectedCaseId, setSelectedCaseId] = useState<string>(() => {
-    // Pre-select case c2 which has specs data
-    const c2 = mockCases.find((c) => c.id === 'c2')
-    return c2?.id ?? mockCases[0]?.id ?? ''
-  })
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(() =>
+    mockCases.find((c) => c.id === 'c2')?.id ?? mockCases[0]?.id ?? ''
+  )
   const [rows, setRows] = useState<SpecRow[]>(() => buildRows('c2'))
   const [labRef, setLabRef] = useState('BV-SG-2026-44821')
   const [cpRef, setCpRef] = useState('CP-PCH-2026-001')
@@ -129,10 +202,16 @@ export default function SpecsCheckerPage() {
   const [saved, setSaved] = useState(false)
   const [linkedToCase, setLinkedToCase] = useState(false)
 
-  // ISO 8217 limit loader state
+  // ISO 8217 loader
   const [isoEdition, setIsoEdition] = useState<IsoEdition>('2017')
   const [isoGrade, setIsoGrade] = useState<string>('RMG380')
   const [isoExpanded, setIsoExpanded] = useState(false)
+
+  // COQ / lab report upload
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisRun, setAnalysisRun] = useState(false)
 
   const selectedCase = mockCases.find((c) => c.id === selectedCaseId) ?? null
 
@@ -140,74 +219,86 @@ export default function SpecsCheckerPage() {
     setSelectedCaseId(caseId)
     setRows(buildRows(caseId))
     setSaved(false)
-    // Suggest an ISO grade based on the case fuel type
+    setAnalysisRun(false)
     const c = mockCases.find((mc) => mc.id === caseId)
     if (c?.fuel_type) {
       const suggestion = MARKET_TO_ISO_GRADE[c.fuel_type.toUpperCase()]
-      if (suggestion) {
-        setIsoEdition(suggestion.edition)
-        setIsoGrade(suggestion.grade)
-      }
+      if (suggestion) { setIsoEdition(suggestion.edition); setIsoGrade(suggestion.grade) }
     }
   }, [])
-
-  const applyIsoLimits = useCallback(() => {
-    const spec = getIsoSpec(isoEdition, isoGrade)
-    if (!spec) return
-    let rowId = 0
-    const newRows = spec.params.map((param) => {
-      rowId += 1
-      return {
-        id: `iso-${isoEdition}-${isoGrade}-${rowId}`,
-        parameter: param.name,
-        unit: param.unit,
-        bdnValue: '',
-        contractMin: param.min != null ? String(param.min) : '',
-        contractMax: param.max != null ? String(param.max) : '',
-        labResult: '',
-      }
-    })
-    setRows(newRows)
-    setSaved(false)
-  }, [isoEdition, isoGrade])
 
   const updateRow = useCallback(
     (id: string, field: keyof Omit<SpecRow, 'id'>, value: string) => {
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)))
       setSaved(false)
-    },
-    []
+    }, []
   )
 
   const addCustomRow = useCallback(() => {
     customRowCounter += 1
-    setRows((prev) => [
-      ...prev,
-      {
-        id: `custom-${customRowCounter}`,
-        parameter: 'Custom Parameter',
-        unit: '',
-        bdnValue: '',
-        contractMin: '',
-        contractMax: '',
-        labResult: '',
-      },
-    ])
+    setRows((prev) => [...prev, {
+      id: `custom-${customRowCounter}`,
+      parameter: 'Custom Parameter', unit: '',
+      bdnValue: '', contractMin: '', contractMax: '', labResult: '',
+    }])
   }, [])
 
   const removeRow = useCallback((id: string) => {
     setRows((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  // ── Summary counts ──────────────────────────────────────────────────────────
-  const statusCounts = rows.reduce(
-    (acc, r) => {
-      const status = computeStatus(r.labResult, r.contractMin, r.contractMax)
-      acc[status] = (acc[status] ?? 0) + 1
-      return acc
-    },
-    {} as Record<SpecStatus, number>
-  )
+  const applyIsoLimits = useCallback(() => {
+    const spec = getIsoSpec(isoEdition, isoGrade)
+    if (!spec) return
+    let n = 0
+    setRows(spec.params.map((param) => ({
+      id: `iso-${isoEdition}-${isoGrade}-${++n}`,
+      parameter: param.name,
+      unit: param.unit,
+      bdnValue: '',
+      contractMin: param.min != null ? String(param.min) : '',
+      contractMax: param.max != null ? String(param.max) : '',
+      labResult: '',
+    })))
+    setSaved(false)
+    setAnalysisRun(false)
+  }, [isoEdition, isoGrade])
+
+  const runAnalysis = useCallback(() => {
+    if (!uploadedFile || analyzing) return
+    const spec = getIsoSpec(isoEdition, isoGrade)
+    if (!spec) return
+    setAnalyzing(true)
+    setTimeout(() => {
+      const extracted = simulateExtraction(uploadedFile.name, spec.params)
+      let n = 0
+      setRows(spec.params.map((param) => ({
+        id: `coq-${isoEdition}-${isoGrade}-${++n}`,
+        parameter: param.name,
+        unit: param.unit,
+        bdnValue: '',
+        contractMin: param.min != null ? String(param.min) : '',
+        contractMax: param.max != null ? String(param.max) : '',
+        labResult: extracted[param.name] ?? '',
+      })))
+      setLabRef(uploadedFile.name.replace(/\.[^.]+$/, ''))
+      setAnalysisRun(true)
+      setAnalyzing(false)
+      setSaved(false)
+    }, 1500)
+  }, [uploadedFile, analyzing, isoEdition, isoGrade])
+
+  const handleFileDrop = useCallback((f: File | null) => {
+    setUploadedFile(f)
+    setAnalysisRun(false)
+  }, [])
+
+  // ── Summary ─────────────────────────────────────────────────────────────────
+  const statusCounts = rows.reduce((acc, r) => {
+    const s = computeStatus(r.labResult, r.contractMin, r.contractMax)
+    acc[s] = (acc[s] ?? 0) + 1
+    return acc
+  }, {} as Record<SpecStatus, number>)
 
   const offSpecCount = statusCounts['off_spec'] ?? 0
   const warningCount = statusCounts['warning'] ?? 0
@@ -218,94 +309,136 @@ export default function SpecsCheckerPage() {
     const csvRows = rows.map((r) => {
       const variance = computeVariance(r.labResult, r.contractMin, r.contractMax)
       const status = computeStatus(r.labResult, r.contractMin, r.contractMax)
-      return [
-        r.parameter,
-        r.unit,
-        r.bdnValue,
-        r.contractMin,
-        r.contractMax,
-        r.labResult,
-        variance != null ? variance.toFixed(4) : '',
-        specStatusLabel(status),
-      ].join(',')
+      return [r.parameter, r.unit, r.bdnValue, r.contractMin, r.contractMax, r.labResult,
+        variance != null ? variance.toFixed(4) : '', specStatusLabel(status)].join(',')
     })
     const csv = [headers.join(','), ...csvRows].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `specs-analysis-${selectedCase?.reference ?? 'export'}.csv`
+    a.download = `specs-analysis-${selectedCase?.reference ?? (labRef || 'export')}.csv`
     a.click()
     URL.revokeObjectURL(url)
-  }, [rows, selectedCase])
+  }, [rows, selectedCase, labRef])
+
+  const currentIsoSpec = getIsoSpec(isoEdition, isoGrade)
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
 
-        {/* Page Header */}
+        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Specifications Checker</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Compare lab results against BDN values and charter party contract limits to identify off-spec parameters.
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Specifications Checker</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Upload a COQ or lab report, select the ordered ISO 8217 grade, and instantly see which parameters pass or fail.
           </p>
         </div>
 
-        {/* Draft Analysis Disclaimer */}
-        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-          <p className="text-sm text-amber-800">
-            <span className="font-semibold">Draft Analysis:</span> All specifications outputs are
-            draft analyses and must be verified against original certified lab reports before use in
-            formal claim proceedings.
-          </p>
-        </div>
-
-        {/* ISO 8217 Limit Loader */}
-        <div className="rounded-lg border border-blue-200 bg-blue-50 shadow-sm overflow-hidden">
-          <button
-            className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
-            onClick={() => setIsoExpanded((v) => !v)}
-          >
-            <BookOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
-            <span className="text-sm font-semibold text-blue-800">ISO 8217 Standard Limits</span>
-            <span className="ml-2 text-xs text-blue-600 font-normal">
-              Pre-fill contract limits from the official specification
+        {/* COQ / Lab Report Upload & Analysis */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              COQ / Lab Report Analysis
+            </h2>
+            <span className="text-xs text-slate-400 dark:text-slate-500 ml-1">
+              Upload a certificate of quality or lab report and select the ordered grade
             </span>
-            <ChevronDown className={cn('h-4 w-4 text-blue-500 ml-auto transition-transform', isoExpanded && 'rotate-180')} />
-          </button>
+          </div>
 
-          {isoExpanded && (
-            <div className="border-t border-blue-200 bg-white px-5 py-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                {/* Edition */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Edition</label>
+          <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Drop zone (2/3 width) */}
+            <div className="lg:col-span-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/jpeg,image/png"
+                className="hidden"
+                onChange={(e) => handleFileDrop(e.target.files?.[0] ?? null)}
+              />
+              {uploadedFile ? (
+                <div className={cn(
+                  'flex items-center gap-3 rounded-lg border-2 px-4 py-3 transition-colors',
+                  analysisRun
+                    ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40',
+                )}>
+                  <FileText className={cn(
+                    'h-8 w-8 flex-shrink-0',
+                    analysisRun ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500',
+                  )} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      {uploadedFile.name}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                      {(uploadedFile.size / 1024).toFixed(0)} KB
+                      {analysisRun && <span className="ml-2 text-green-600 dark:text-green-400 font-medium">✓ Analyzed</span>}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleFileDrop(null)}
+                    className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex-shrink-0"
+                    title="Remove file"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setDragOver(false)
+                    handleFileDrop(e.dataTransfer.files[0] ?? null)
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-8 cursor-pointer transition-colors',
+                    dragOver
+                      ? 'border-blue-400 bg-blue-50/60 dark:bg-blue-900/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/10',
+                  )}
+                >
+                  <UploadCloud className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Drop COQ or lab report here, or click to browse
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">PDF · JPG · PNG</p>
+                </div>
+              )}
+            </div>
+
+            {/* Grade selection + Analyze CTA (1/3 width) */}
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Ordered Grade (ISO 8217)
+                </label>
+                <div className="flex gap-2">
                   <select
                     value={isoEdition}
                     onChange={(e) => {
                       const ed = e.target.value as IsoEdition
                       setIsoEdition(ed)
-                      // keep grade if available in new edition, else reset
                       const grades = getIsoEditionGrades(ed)
-                      const all = [...grades.distillate, ...grades.residual]
+                      const all = [...grades.residual, ...grades.distillate]
                       if (!all.includes(isoGrade)) setIsoGrade(all[0] ?? '')
+                      setAnalysisRun(false)
                     }}
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="w-28 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-2 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                   >
                     {ISO_EDITIONS.map((ed) => (
                       <option key={ed.value} value={ed.value}>{ed.label}</option>
                     ))}
                   </select>
-                </div>
-
-                {/* Grade */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Fuel Grade</label>
                   <select
                     value={isoGrade}
-                    onChange={(e) => setIsoGrade(e.target.value)}
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    onChange={(e) => { setIsoGrade(e.target.value); setAnalysisRun(false) }}
+                    className="flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-2 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                   >
                     {(() => {
                       const grades = getIsoEditionGrades(isoEdition)
@@ -322,65 +455,156 @@ export default function SpecsCheckerPage() {
                     })()}
                   </select>
                 </div>
-
-                {/* Apply */}
-                <div>
-                  <button
-                    onClick={applyIsoLimits}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    Apply ISO Limits
-                  </button>
-                </div>
+                {currentIsoSpec && (
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    {currentIsoSpec.params.length} parameters ·{' '}
+                    {currentIsoSpec.category === 'residual' ? 'Residual fuel' : 'Distillate fuel'}
+                    {MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
+                      MARKET_TO_ISO_GRADE[k].grade === isoGrade) ?? '']?.note &&
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">
+                        · {MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
+                          MARKET_TO_ISO_GRADE[k].grade === isoGrade) ?? '']?.note}
+                      </span>
+                    }
+                  </p>
+                )}
               </div>
 
-              {/* Preview of spec */}
-              {(() => {
-                const spec = getIsoSpec(isoEdition, isoGrade)
-                if (!spec) return null
-                const note = MARKET_TO_ISO_GRADE[Object.keys(MARKET_TO_ISO_GRADE).find(k =>
-                  MARKET_TO_ISO_GRADE[k].grade === isoGrade && MARKET_TO_ISO_GRADE[k].edition === isoEdition
-                ) ?? '']?.note
-                return (
-                  <div>
-                    <p className="text-xs text-slate-500 mb-2">
-                      <span className="font-medium text-slate-700">{spec.params.length} parameters</span>
-                      {' · '}
-                      {spec.category === 'residual' ? 'Residual fuel' : 'Distillate fuel'}
-                      {note && <span className="ml-2 text-amber-700 font-medium">⚠ {note}</span>}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {spec.params.slice(0, 12).map((param) => (
-                        <span key={param.name} className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-600">
-                          {param.name}
-                          {param.max != null && <span className="ml-1 text-slate-400">≤{param.max}</span>}
-                          {param.min != null && param.max == null && <span className="ml-1 text-slate-400">≥{param.min}</span>}
-                        </span>
-                      ))}
-                      {spec.params.length > 12 && (
-                        <span className="text-[10px] text-slate-400 self-center">+{spec.params.length - 12} more</span>
-                      )}
-                    </div>
-                  </div>
-                )
-              })()}
+              <button
+                onClick={runAnalysis}
+                disabled={!uploadedFile || analyzing}
+                className={cn(
+                  'mt-auto w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors shadow-sm',
+                  uploadedFile && !analyzing
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed',
+                )}
+              >
+                {analyzing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Extracting parameters…</>
+                ) : analysisRun ? (
+                  <><FlaskConical className="h-4 w-4" /> Re-analyze</>
+                ) : (
+                  <><FlaskConical className="h-4 w-4" /> Analyze Document</>
+                )}
+              </button>
 
-              <p className="text-[11px] text-slate-400">
-                Applying ISO limits will replace the current parameter rows. BDN values and lab results are preserved if the parameter name matches exactly.
-              </p>
+              {!uploadedFile && (
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">
+                  Upload a document above, then click Analyze
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Draft Analysis Disclaimer */}
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            <span className="font-semibold">Draft Analysis:</span> All outputs are draft analyses
+            and must be verified against original certified lab reports before use in formal proceedings.
+            Extracted values are indicative — always confirm against the source document.
+          </p>
+        </div>
+
+        {/* ISO 8217 Manual Override (collapsible) */}
+        <div className="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10 shadow-sm overflow-hidden">
+          <button
+            className="w-full flex items-center gap-3 px-5 py-3 text-left"
+            onClick={() => setIsoExpanded((v) => !v)}
+          >
+            <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+              Manual ISO 8217 Limit Override
+            </span>
+            <span className="text-xs text-blue-600 dark:text-blue-400 font-normal ml-1 hidden sm:inline">
+              Apply spec limits without uploading a document
+            </span>
+            <ChevronDown className={cn('h-4 w-4 text-blue-500 ml-auto transition-transform', isoExpanded && 'rotate-180')} />
+          </button>
+
+          {isoExpanded && (
+            <div className="border-t border-blue-200 dark:border-blue-900/40 bg-white dark:bg-slate-800 px-5 py-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Edition</label>
+                  <select
+                    value={isoEdition}
+                    onChange={(e) => {
+                      const ed = e.target.value as IsoEdition
+                      setIsoEdition(ed)
+                      const grades = getIsoEditionGrades(ed)
+                      const all = [...grades.residual, ...grades.distillate]
+                      if (!all.includes(isoGrade)) setIsoGrade(all[0] ?? '')
+                      setAnalysisRun(false)
+                    }}
+                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {ISO_EDITIONS.map((ed) => (
+                      <option key={ed.value} value={ed.value}>{ed.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Grade</label>
+                  <select
+                    value={isoGrade}
+                    onChange={(e) => { setIsoGrade(e.target.value); setAnalysisRun(false) }}
+                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {(() => {
+                      const grades = getIsoEditionGrades(isoEdition)
+                      return (
+                        <>
+                          <optgroup label="Residual">
+                            {grades.residual.map((g) => <option key={g} value={g}>{g}</option>)}
+                          </optgroup>
+                          <optgroup label="Distillate">
+                            {grades.distillate.map((g) => <option key={g} value={g}>{g}</option>)}
+                          </optgroup>
+                        </>
+                      )
+                    })()}
+                  </select>
+                </div>
+                <button
+                  onClick={applyIsoLimits}
+                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  <BookOpen className="h-4 w-4" /> Apply Limits Only
+                </button>
+              </div>
+              {currentIsoSpec && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {currentIsoSpec.params.slice(0, 12).map((param) => (
+                    <span key={param.name} className="inline-flex items-center rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-600 dark:text-slate-300">
+                      {param.name}
+                      {param.max != null && <span className="ml-1 text-slate-400 dark:text-slate-500">≤{param.max}</span>}
+                      {param.min != null && param.max == null && <span className="ml-1 text-slate-400 dark:text-slate-500">≥{param.min}</span>}
+                    </span>
+                  ))}
+                  {currentIsoSpec.params.length > 12 && (
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 self-center">
+                      +{currentIsoSpec.params.length - 12} more
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Case / Delivery Selector Panel */}
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Case &amp; Reference Details</h2>
+        {/* Case & Reference Details */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">
+            Case &amp; Reference Details
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Case</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Case</label>
               <select
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                 value={selectedCaseId}
                 onChange={(e) => handleCaseChange(e.target.value)}
               >
@@ -392,20 +616,24 @@ export default function SpecsCheckerPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Lab Report Reference</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Lab Report Reference
+              </label>
               <input
                 type="text"
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                 value={labRef}
                 onChange={(e) => setLabRef(e.target.value)}
                 placeholder="e.g. BV-SG-2026-44821"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Charter Party Reference</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Charter Party Reference
+              </label>
               <input
                 type="text"
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                 value={cpRef}
                 onChange={(e) => setCpRef(e.target.value)}
                 placeholder="e.g. CP-PCH-2026-001"
@@ -413,12 +641,12 @@ export default function SpecsCheckerPage() {
             </div>
           </div>
           {selectedCase && (
-            <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 border-t border-slate-100 pt-4">
-              <span><span className="font-medium text-slate-700">Vessel:</span> {selectedCase.vessel?.name}</span>
-              <span><span className="font-medium text-slate-700">Port:</span> {selectedCase.port?.name}</span>
-              <span><span className="font-medium text-slate-700">Supplier:</span> {selectedCase.supplier?.name}</span>
-              <span><span className="font-medium text-slate-700">Delivery:</span> {formatDate(selectedCase.delivery?.delivery_date ?? selectedCase.opened_at)}</span>
-              <span><span className="font-medium text-slate-700">Fuel:</span> {selectedCase.fuel_type}</span>
+            <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-4">
+              <span><span className="font-medium text-slate-700 dark:text-slate-200">Vessel:</span> {selectedCase.vessel?.name}</span>
+              <span><span className="font-medium text-slate-700 dark:text-slate-200">Port:</span> {selectedCase.port?.name}</span>
+              <span><span className="font-medium text-slate-700 dark:text-slate-200">Supplier:</span> {selectedCase.supplier?.name}</span>
+              <span><span className="font-medium text-slate-700 dark:text-slate-200">Delivery:</span> {formatDate(selectedCase.delivery?.delivery_date ?? selectedCase.opened_at)}</span>
+              <span><span className="font-medium text-slate-700 dark:text-slate-200">Fuel:</span> {selectedCase.fuel_type}</span>
             </div>
           )}
         </div>
@@ -426,71 +654,68 @@ export default function SpecsCheckerPage() {
         {/* Summary Banner */}
         <div className="grid grid-cols-3 gap-4">
           <div className={cn(
-            'rounded-lg border p-4 flex items-center gap-3',
-            offSpecCount > 0 ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
+            'rounded-lg border p-4 flex items-center gap-3 dark:bg-slate-800',
+            offSpecCount > 0 ? 'border-red-200 dark:border-red-900/50 bg-red-50' : 'border-slate-200 dark:border-slate-700 bg-white',
           )}>
-            <XCircle className={cn('h-8 w-8', offSpecCount > 0 ? 'text-red-500' : 'text-slate-300')} />
+            <XCircle className={cn('h-8 w-8', offSpecCount > 0 ? 'text-red-500' : 'text-slate-300 dark:text-slate-600')} />
             <div>
-              <p className="text-2xl font-bold text-slate-900">{offSpecCount}</p>
-              <p className="text-xs text-slate-600 font-medium">Off-Spec</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{offSpecCount}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Off-Spec</p>
             </div>
           </div>
           <div className={cn(
-            'rounded-lg border p-4 flex items-center gap-3',
-            warningCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'
+            'rounded-lg border p-4 flex items-center gap-3 dark:bg-slate-800',
+            warningCount > 0 ? 'border-amber-200 dark:border-amber-900/50 bg-amber-50' : 'border-slate-200 dark:border-slate-700 bg-white',
           )}>
-            <AlertTriangle className={cn('h-8 w-8', warningCount > 0 ? 'text-amber-500' : 'text-slate-300')} />
+            <AlertTriangle className={cn('h-8 w-8', warningCount > 0 ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600')} />
             <div>
-              <p className="text-2xl font-bold text-slate-900">{warningCount}</p>
-              <p className="text-xs text-slate-600 font-medium">At Limit</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{warningCount}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">At Limit</p>
             </div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 flex items-center gap-3">
-            <CheckCircle className={cn('h-8 w-8', okCount > 0 ? 'text-green-500' : 'text-slate-300')} />
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 flex items-center gap-3">
+            <CheckCircle className={cn('h-8 w-8', okCount > 0 ? 'text-green-500' : 'text-slate-300 dark:text-slate-600')} />
             <div>
-              <p className="text-2xl font-bold text-slate-900">{okCount}</p>
-              <p className="text-xs text-slate-600 font-medium">Within Specification</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{okCount}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Within Spec</p>
             </div>
           </div>
         </div>
 
-        {/* Specifications Table */}
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Parameter Analysis</h2>
+        {/* Analysis provenance tag */}
+        {analysisRun && uploadedFile && (
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/15 px-4 py-2.5">
+            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+            <p className="text-sm text-green-800 dark:text-green-300 flex-1">
+              Parameters extracted from <span className="font-medium">{uploadedFile.name}</span>
+              {' · '}Checked against <span className="font-medium">ISO 8217:{isoEdition} {isoGrade}</span>
+            </p>
+          </div>
+        )}
+
+        {/* Parameter Table */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Parameter Analysis</h2>
             <button
               onClick={addCustomRow}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" />
-              Add Custom Parameter
+              <Plus className="h-3.5 w-3.5" /> Add Row
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-left">
-                  {[
-                    'Parameter',
-                    'Unit',
-                    'BDN Value',
-                    'Contract Min',
-                    'Contract Max',
-                    'Lab Result',
-                    'Variance',
-                    'Status',
-                    '',
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap border-b border-slate-200"
-                    >
+                <tr className="bg-slate-50 dark:bg-slate-700/50 text-left">
+                  {['Parameter', 'Unit', 'ISO Min', 'ISO Max', 'Lab Result', 'Variance', 'Status', ''].map((h) => (
+                    <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide whitespace-nowrap border-b border-slate-200 dark:border-slate-700">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {rows.map((row) => {
                   const variance = computeVariance(row.labResult, row.contractMin, row.contractMax)
                   const status = computeStatus(row.labResult, row.contractMin, row.contractMax)
@@ -502,7 +727,7 @@ export default function SpecsCheckerPage() {
                       <td className="px-4 py-2.5">
                         <input
                           type="text"
-                          className="w-48 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-52 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                           value={row.parameter}
                           onChange={(e) => updateRow(row.id, 'parameter', e.target.value)}
                         />
@@ -510,45 +735,25 @@ export default function SpecsCheckerPage() {
 
                       {/* Unit */}
                       <td className="px-4 py-2.5">
-                        <input
-                          type="text"
-                          className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          value={row.unit}
-                          onChange={(e) => updateRow(row.id, 'unit', e.target.value)}
-                          placeholder="unit"
-                        />
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-16 inline-block">{row.unit || '—'}</span>
                       </td>
 
-                      {/* BDN Value */}
+                      {/* ISO Min (contractMin) */}
                       <td className="px-4 py-2.5">
                         <input
-                          type="number"
-                          step="any"
-                          className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-right text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          value={row.bdnValue}
-                          onChange={(e) => updateRow(row.id, 'bdnValue', e.target.value)}
-                          placeholder="—"
-                        />
-                      </td>
-
-                      {/* Contract Min */}
-                      <td className="px-4 py-2.5">
-                        <input
-                          type="number"
-                          step="any"
-                          className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-right text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          type="number" step="any"
+                          className="w-20 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-right text-slate-700 dark:text-slate-300 focus:border-blue-500 focus:outline-none"
                           value={row.contractMin}
                           onChange={(e) => updateRow(row.id, 'contractMin', e.target.value)}
                           placeholder="—"
                         />
                       </td>
 
-                      {/* Contract Max */}
+                      {/* ISO Max (contractMax) */}
                       <td className="px-4 py-2.5">
                         <input
-                          type="number"
-                          step="any"
-                          className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-right text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          type="number" step="any"
+                          className="w-20 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-right text-slate-700 dark:text-slate-300 focus:border-blue-500 focus:outline-none"
                           value={row.contractMax}
                           onChange={(e) => updateRow(row.id, 'contractMax', e.target.value)}
                           placeholder="—"
@@ -558,15 +763,14 @@ export default function SpecsCheckerPage() {
                       {/* Lab Result */}
                       <td className="px-4 py-2.5">
                         <input
-                          type="number"
-                          step="any"
+                          type="number" step="any"
                           className={cn(
-                            'w-24 rounded border px-2 py-1 text-sm text-right focus:outline-none focus:ring-1',
+                            'w-24 rounded border px-2 py-1 text-sm text-right font-mono focus:outline-none focus:ring-1',
                             status === 'off_spec'
-                              ? 'border-red-400 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-200'
+                              ? 'border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 focus:border-red-500 focus:ring-red-200'
                               : status === 'warning'
-                              ? 'border-amber-400 bg-amber-50 text-amber-900 focus:border-amber-500 focus:ring-amber-200'
-                              : 'border-slate-300 bg-white text-slate-900 focus:border-blue-500 focus:ring-blue-500'
+                              ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-300 focus:border-amber-500 focus:ring-amber-200'
+                              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-blue-500',
                           )}
                           value={row.labResult}
                           onChange={(e) => updateRow(row.id, 'labResult', e.target.value)}
@@ -574,23 +778,18 @@ export default function SpecsCheckerPage() {
                         />
                       </td>
 
-                      {/* Variance (read-only) */}
+                      {/* Variance */}
                       <td className="px-4 py-2.5 text-right font-mono text-xs">
                         {variance !== null ? (
-                          <span
-                            className={cn(
-                              status === 'off_spec'
-                                ? 'font-semibold text-red-600'
-                                : status === 'warning'
-                                ? 'font-semibold text-amber-600'
-                                : 'text-green-600'
-                            )}
-                          >
-                            {variance >= 0 ? '+' : ''}
-                            {variance.toFixed(4)}
+                          <span className={cn(
+                            status === 'off_spec' ? 'font-semibold text-red-600 dark:text-red-400'
+                            : status === 'warning' ? 'font-semibold text-amber-600 dark:text-amber-400'
+                            : 'text-green-600 dark:text-green-400',
+                          )}>
+                            {variance >= 0 ? '+' : ''}{variance.toFixed(4)}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-400 dark:text-slate-500">—</span>
                         )}
                       </td>
 
@@ -603,7 +802,7 @@ export default function SpecsCheckerPage() {
                       <td className="px-2 py-2.5">
                         <button
                           onClick={() => removeRow(row.id)}
-                          className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           title="Remove row"
                         >
                           <XCircle className="h-3.5 w-3.5" />
@@ -629,10 +828,9 @@ export default function SpecsCheckerPage() {
 
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
           >
-            <Download className="h-4 w-4" />
-            Export Report
+            <Download className="h-4 w-4" /> Export CSV
           </button>
 
           <button
@@ -640,8 +838,8 @@ export default function SpecsCheckerPage() {
             className={cn(
               'inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors shadow-sm',
               linkedToCase
-                ? 'border-green-500 bg-green-50 text-green-700'
-                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700',
             )}
           >
             <CheckCircle className="h-4 w-4" />
@@ -649,20 +847,21 @@ export default function SpecsCheckerPage() {
           </button>
         </div>
 
-        {/* Notes Section */}
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
+        {/* Notes */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
             Analysis Notes
           </label>
           <textarea
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-            rows={5}
+            className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:outline-none resize-none"
+            rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Record interpretation notes, surveyor observations, or follow-up actions required..."
           />
-          <p className="mt-1.5 text-xs text-slate-400">{notes.length} characters</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{notes.length} characters</p>
         </div>
+
       </div>
     </div>
   )
