@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   caseRegistry,
-  mockCases,
-  mockDrafts,
+  draftRegistry,
   mockDocuments,
   mockActivities,
   mockSpecsChecks,
@@ -202,7 +201,7 @@ function computeDashboard(): DashboardData {
 
   const openCases = allCases.filter((c) => OPEN_STATUSES.includes(c.status))
   const urgentCases = allCases.filter((c) => c.priority === 'urgent' || c.status === 'escalated')
-  const pendingDrafts = mockDrafts.filter((d) =>
+  const pendingDrafts = [...draftRegistry.values()].filter((d) =>
     d.status === 'draft' || d.status === 'under_review' || d.status === 'approved',
   )
   const offSpec = mockSpecsChecks.filter((s) => s.status === 'off_spec')
@@ -312,7 +311,11 @@ export function useDashboard(): UseDashboardResult {
   useEffect(() => {
     const handler = () => setTick((t) => t + 1)
     window.addEventListener('caseRegistryUpdated', handler)
-    return () => window.removeEventListener('caseRegistryUpdated', handler)
+    window.addEventListener('draftRegistryUpdated', handler)
+    return () => {
+      window.removeEventListener('caseRegistryUpdated', handler)
+      window.removeEventListener('draftRegistryUpdated', handler)
+    }
   }, [])
 
   const data = useMemo(() => computeDashboard(), [tick])

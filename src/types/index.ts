@@ -129,6 +129,11 @@ export type ActivityType =
   | 'note_added'
   | 'escalated'
   | 'fuel_readiness_updated'
+  | 'call_logged'
+  | 'email_logged'
+  | 'action_completed'
+  | 'status_changed'
+  | 'measurements_entered'
 
 export type AuditOperation = 'INSERT' | 'UPDATE' | 'DELETE'
 

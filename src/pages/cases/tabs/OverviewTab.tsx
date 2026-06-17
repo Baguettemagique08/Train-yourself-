@@ -1,4 +1,5 @@
 import type { Case } from '@/types'
+import { mockDocuments } from '@/data/mockData'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { CaseStatusBadge, FuelTypeBadge, PriorityBadge } from '@/components/ui/StatusBadge'
 import {
@@ -88,6 +89,9 @@ export function OverviewTab({ case_ }: OverviewTabProps) {
 
   const isClosedOrResolved = case_.status === 'closed' || case_.status === 'resolved'
   const deadlines = isClosedOrResolved ? [] : computeDeadlines(case_)
+  const hasLop = mockDocuments.some(
+    (d) => d.case_id === case_.id && (d.document_type === 'LOP' || d.document_type === 'Protest'),
+  )
   const isOffSpec = OFF_SPEC_TYPES.has(case_.discrepancy_type)
   const showOffSpecBanner =
     isOffSpec ||
@@ -100,6 +104,28 @@ export function OverviewTab({ case_ }: OverviewTabProps) {
       {deadlines.length > 0 && (
         <div className="space-y-2">
           {deadlines.map((d) => {
+            const isNoticeDeadline = d.label === 'Formal Notice of Claim Deadline'
+            const lopFiled = isNoticeDeadline && hasLop
+
+            if (lopFiled) {
+              return (
+                <div
+                  key={d.label}
+                  className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3"
+                >
+                  <CheckCircle className="h-4 w-4 shrink-0 text-green-600" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-green-700">
+                      LOP / Protest Filed — Formal Notice Established
+                    </span>
+                    <span className="ml-2 text-xs text-slate-500">
+                      (deadline {formatDate(d.due.toISOString())})
+                    </span>
+                  </div>
+                </div>
+              )
+            }
+
             const colors = deadlineColors(d.daysLeft)
             const expired = d.daysLeft < 0
             return (

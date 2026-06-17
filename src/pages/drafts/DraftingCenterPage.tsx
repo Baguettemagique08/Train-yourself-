@@ -10,7 +10,7 @@ import {
   Edit2,
   History,
 } from 'lucide-react'
-import { mockDrafts, mockCases, mockTemplates } from '@/data/mockData'
+import { mockDrafts, mockCases, mockTemplates, draftRegistry } from '@/data/mockData'
 import { cn, formatDateTime, formatRelative, draftStatusLabel } from '@/lib/utils'
 import type { Draft, DraftType, DraftStatus } from '@/types'
 import { DRAFT_TYPE_OPTIONS } from '@/lib/constants'
@@ -251,17 +251,14 @@ export default function DraftingCenterPage() {
       if (!selectedDraftId) return
       const now = new Date().toISOString()
       setDrafts((prev) =>
-        prev.map((d) =>
-          d.id === selectedDraftId
-            ? {
-                ...d,
-                status: newStatus,
-                updated_at: now,
-                ...(newStatus === 'sent' ? { sent_at: now } : {}),
-              }
-            : d
-        )
+        prev.map((d) => {
+          if (d.id !== selectedDraftId) return d
+          const updated = { ...d, status: newStatus, updated_at: now, ...(newStatus === 'sent' ? { sent_at: now } : {}) }
+          draftRegistry.set(d.id, updated)
+          return updated
+        })
       )
+      window.dispatchEvent(new Event('draftRegistryUpdated'))
     },
     [selectedDraftId]
   )

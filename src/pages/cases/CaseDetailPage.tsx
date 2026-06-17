@@ -16,6 +16,8 @@ import { DraftsTab } from './tabs/DraftsTab'
 import { ActivityTab } from './tabs/ActivityTab'
 import { FuelReadinessTab } from './tabs/FuelReadinessTab'
 import { SamplesTab } from './tabs/SamplesTab'
+import { QuantumTab } from './tabs/QuantumTab'
+import { NotesTab } from './tabs/NotesTab'
 import { formatDate } from '@/lib/utils'
 import {
   FUEL_TYPE_OPTIONS, DISCREPANCY_TYPE_OPTIONS, PRIORITY_OPTIONS,
@@ -101,8 +103,10 @@ export function CaseDetailPage() {
     { id: 'samples', label: 'Samples' },
     { id: 'figures', label: 'Figures' },
     { id: 'specs', label: 'Specs Check' },
+    { id: 'quantum', label: 'Quantum' },
     { id: 'drafts', label: 'Drafts' },
     { id: 'activity', label: 'Activity' },
+    { id: 'notes', label: 'Notes' },
     { id: 'fuel_readiness', label: 'Fuel Readiness' },
   ]
 
@@ -174,8 +178,10 @@ export function CaseDetailPage() {
           {activeTab === 'samples' && <SamplesTab caseId={case_.id} />}
           {activeTab === 'figures' && <FiguresTab caseId={case_.id} />}
           {activeTab === 'specs' && <SpecsTab caseId={case_.id} />}
+          {activeTab === 'quantum' && <QuantumTab case_={case_} />}
           {activeTab === 'drafts' && <DraftsTab caseId={case_.id} />}
           {activeTab === 'activity' && <ActivityTab caseId={case_.id} />}
+          {activeTab === 'notes' && <NotesTab caseId={case_.id} />}
           {activeTab === 'fuel_readiness' && <FuelReadinessTab vesselId={case_.vessel_id} />}
         </div>
       </div>

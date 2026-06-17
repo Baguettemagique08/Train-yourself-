@@ -153,7 +153,7 @@ export default function ReconcilerPage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-700/50 text-left">
-                        {['Source', 'Obs. Vol. (m³)', 'Temp (°C)', 'Density@Obs (kg/m³)', 'VCF', 'Vol@15°C (m³)', 'Density@15°C (kg/m³)', 'Trim Corr. (m³)', 'Mass (MT)'].map((h) => (
+                        {['Source', 'Obs. Vol. (m³)', 'Temp (°C)', 'Density@Obs (t/m³)', 'VCF', 'Vol@15°C (m³)', 'Density@15°C (t/m³)', 'Trim Corr. (m³)', 'Mass (MT)'].map((h) => (
                           <th key={h} className="px-3 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -164,7 +164,7 @@ export default function ReconcilerPage() {
                           ? m.observed_volume_m3 * m.vcf
                           : null
                         const massCalc = volAt15 != null && m.density_at_15c_kgm3 != null
-                          ? ((volAt15 + (m.trim_correction_m3 ?? 0)) * m.density_at_15c_kgm3) / 1000
+                          ? (volAt15 + (m.trim_correction_m3 ?? 0)) * m.density_at_15c_kgm3
                           : null
                         return (
                           <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
@@ -186,7 +186,7 @@ export default function ReconcilerPage() {
                   </table>
                   <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700">
                     <p className="text-xs text-slate-400 dark:text-slate-500">
-                      Mass (MT) = (Observed Volume × VCF + Trim Correction) × Density@15°C ÷ 1000. Calculation per ASTM D1250 tables.
+                      Mass (MT) = (Observed Volume × VCF + Trim Correction) × Density@15°C. Density in t/m³; calculation per ASTM D1250 tables.
                       Fields showing "—" were not recorded for this measurement source.
                     </p>
                   </div>
