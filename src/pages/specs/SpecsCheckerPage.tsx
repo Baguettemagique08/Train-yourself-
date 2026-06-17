@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   CheckCircle, AlertTriangle, XCircle, Plus, Download, Save,
   BookOpen, ChevronDown, UploadCloud, FileText, X, FlaskConical, Loader2,
@@ -213,11 +214,16 @@ let customRowCounter = 0
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function SpecsCheckerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [searchParams] = useSearchParams()
 
-  const [selectedCaseId, setSelectedCaseId] = useState<string>(() =>
-    mockCases.find((c) => c.id === 'c2')?.id ?? mockCases[0]?.id ?? ''
-  )
-  const [rows, setRows] = useState<SpecRow[]>(() => buildRows('c2'))
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(() => {
+    const fromParam = searchParams.get('caseId')
+    return fromParam ?? mockCases.find((c) => c.id === 'c2')?.id ?? mockCases[0]?.id ?? ''
+  })
+  const [rows, setRows] = useState<SpecRow[]>(() => {
+    const fromParam = searchParams.get('caseId')
+    return buildRows(fromParam ?? 'c2')
+  })
   const [labRef, setLabRef] = useState('BV-SG-2026-44821')
   const [cpRef, setCpRef] = useState('CP-PCH-2026-001')
   const [notes, setNotes] = useState('')

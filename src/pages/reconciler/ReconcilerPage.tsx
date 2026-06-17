@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle, Download, Printer, Save, MessageSquarePlus, Scale, Info,
   Hash, ChevronDown,
@@ -13,7 +14,8 @@ import { mockCases, mockMeasurements } from '@/data/mockData'
 import { formatDate, formatRelative, initials, cn } from '@/lib/utils'
 
 export default function ReconcilerPage() {
-  const rec = useReconciler()
+  const [searchParams] = useSearchParams()
+  const rec = useReconciler(searchParams.get('caseId') ?? undefined)
   const { analysis, selectedCase } = rec
   const [saved, setSaved] = useState(false)
   const [showVcf, setShowVcf] = useState(false)

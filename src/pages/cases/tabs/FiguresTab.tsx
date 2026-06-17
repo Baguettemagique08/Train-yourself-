@@ -1,10 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { mockMeasurements } from '@/data/mockData'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { FuelTypeBadge } from '@/components/ui/StatusBadge'
 import { formatQuantity, formatPct, clampVariance } from '@/lib/utils'
-import { AlertTriangle, CheckCircle, Plus } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Plus, ExternalLink } from 'lucide-react'
 import type { Measurement } from '@/types'
 
 interface FiguresTabProps {
@@ -12,6 +13,7 @@ interface FiguresTabProps {
 }
 
 export function FiguresTab({ caseId }: FiguresTabProps) {
+  const navigate = useNavigate()
   const measurements = mockMeasurements.filter((m) => m.case_id === caseId)
 
   const vessel = measurements.find((m) => m.source === 'vessel')
@@ -41,6 +43,11 @@ export function FiguresTab({ caseId }: FiguresTabProps) {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <Button variant="secondary" size="sm" onClick={() => navigate(`/reconciler?caseId=${caseId}`)}>
+          <ExternalLink className="h-3.5 w-3.5" /> Open in Reconciler
+        </Button>
+      </div>
       {/* Measurement cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {vessel && <MeasurementCard m={vessel} label="Vessel" color="blue" />}

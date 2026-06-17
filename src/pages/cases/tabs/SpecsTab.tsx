@@ -1,9 +1,10 @@
+import { useNavigate } from 'react-router-dom'
 import { mockSpecsChecks } from '@/data/mockData'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SpecStatusBadge } from '@/components/ui/StatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
-import { AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle, Plus, ExternalLink } from 'lucide-react'
 import { formatQuantity } from '@/lib/utils'
 
 interface SpecsTabProps {
@@ -11,6 +12,7 @@ interface SpecsTabProps {
 }
 
 export function SpecsTab({ caseId }: SpecsTabProps) {
+  const navigate = useNavigate()
   const specs = mockSpecsChecks.filter((s) => s.case_id === caseId)
 
   if (specs.length === 0) {
@@ -28,6 +30,11 @@ export function SpecsTab({ caseId }: SpecsTabProps) {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <Button variant="secondary" size="sm" onClick={() => navigate(`/specs?caseId=${caseId}`)}>
+          <ExternalLink className="h-3.5 w-3.5" /> Open in Specs Checker
+        </Button>
+      </div>
       {/* Summary */}
       {(offSpec.length > 0 || warnings.length > 0) && (
         <div className="flex gap-3 flex-wrap">
