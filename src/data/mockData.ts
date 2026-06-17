@@ -797,6 +797,54 @@ export const mockActivities: Activity[] = [
   { id: 'a8', case_id: 'c1', user_id: 'u1', user: mockUsers[0], activity_type: 'note_added', description: 'Supplier requested 5 working days to investigate. Chasing barge ullage report.', created_at: '2026-06-10T14:22:00Z' },
 ]
 
+mockActivities.push(
+  // c7: Antwerp VLSFO off-spec
+  { id: 'a9',  case_id: 'c7', user_id: 'u2', user: mockUsers[1], activity_type: 'case_created',      description: 'Case CPM-2026-0048 opened. SGS Antwerp lab results indicate sulphur and viscosity exceedances.', created_at: '2026-06-05T09:00:00Z' },
+  { id: 'a10', case_id: 'c7', user_id: 'u2', user: mockUsers[1], activity_type: 'document_uploaded',  description: 'Uploaded BDN DEL-2026-0461 and SGS lab report (ANT-2026-18842).', created_at: '2026-06-05T09:45:00Z' },
+  { id: 'a11', case_id: 'c7', user_id: 'u2', user: mockUsers[1], activity_type: 'measurements_entered', description: 'Vessel and barge figures entered. Quantity within tolerance; spec issues confirmed.', created_at: '2026-06-06T10:00:00Z' },
+  { id: 'a12', case_id: 'c7', user_id: 'u4', user: mockUsers[3], activity_type: 'email_logged',        description: 'Formal notice of off-spec delivery sent to supplier by email. Notice period started.', created_at: '2026-06-07T11:30:00Z' },
+  { id: 'a13', case_id: 'c7', user_id: 'u2', user: mockUsers[1], activity_type: 'note_added',          description: 'Supplier acknowledged receipt. Requested MARPOL bunker sample from vessel for counter-analysis.', created_at: '2026-06-11T15:00:00Z' },
+  // c8: Marsaxlokk HSFO quantity short
+  { id: 'a14', case_id: 'c8', user_id: 'u2', user: mockUsers[1], activity_type: 'case_created',      description: 'Case CPM-2026-0045 opened. Shortage ~18-22 MT against BDN 1800 MT.', created_at: '2026-05-27T08:00:00Z' },
+  { id: 'a15', case_id: 'c8', user_id: 'u2', user: mockUsers[1], activity_type: 'document_uploaded',  description: 'BDN, vessel ullage report, and independent surveyor certificate uploaded.', created_at: '2026-05-27T09:00:00Z' },
+  { id: 'a16', case_id: 'c8', user_id: 'u2', user: mockUsers[1], activity_type: 'measurements_entered', description: 'Four measurement sources entered. Barge figure 1803.2 MT disputed — does not align with three other sources.', created_at: '2026-05-27T10:30:00Z' },
+  { id: 'a17', case_id: 'c8', user_id: 'u4', user: mockUsers[3], activity_type: 'draft_created',      description: 'LOP and Notice of Shortage draft created for review.', created_at: '2026-05-28T09:00:00Z' },
+  { id: 'a18', case_id: 'c8', user_id: 'u2', user: mockUsers[1], activity_type: 'status_changed',     description: 'Status moved to Under Review — awaiting supplier barge ullage log.', created_at: '2026-06-02T14:00:00Z' },
+  { id: 'a19', case_id: 'c8', user_id: 'u2', user: mockUsers[1], activity_type: 'call_logged',         description: 'Call with Oceanbunkering supplier. They dispute MFM calibration. Counter-evidence requested within 7 days.', created_at: '2026-06-10T11:00:00Z' },
+  // c9: Gibraltar MGO documentation dispute
+  { id: 'a20', case_id: 'c9', user_id: 'u3', user: mockUsers[2], activity_type: 'case_created',      description: 'Case CPM-2026-0052 opened. BDN signature and delivery time irregularities identified.', created_at: '2026-06-07T10:00:00Z' },
+  { id: 'a21', case_id: 'c9', user_id: 'u3', user: mockUsers[2], activity_type: 'document_uploaded',  description: 'Uploaded BDN (DEL-2026-0479), vessel engine room log, and Chief Engineer statement.', created_at: '2026-06-07T11:00:00Z' },
+  { id: 'a22', case_id: 'c9', user_id: 'u3', user: mockUsers[2], activity_type: 'email_logged',        description: 'Formal objection to BDN validity sent to supplier. Requested re-issue with correct signatures.', created_at: '2026-06-08T09:00:00Z' },
+  { id: 'a23', case_id: 'c9', user_id: 'u4', user: mockUsers[3], activity_type: 'note_added',          description: 'Reviewing documentation under English law. BDN signature defect does not automatically void delivery obligation — quantity agreed by all parties.', created_at: '2026-06-09T14:00:00Z' },
+  // c10: Piraeus VLSFO contamination
+  { id: 'a24', case_id: 'c10', user_id: 'u1', user: mockUsers[0], activity_type: 'case_created',      description: 'Case CPM-2026-0056 escalated immediately. Contamination suspected — toluene and xylene detected in settling tank.', created_at: '2026-06-03T14:00:00Z' },
+  { id: 'a25', case_id: 'c10', user_id: 'u1', user: mockUsers[0], activity_type: 'document_uploaded',  description: 'Intertek lab report (PIR-2026-7741) and vessel engineer statement uploaded.', created_at: '2026-06-04T08:30:00Z' },
+  { id: 'a26', case_id: 'c10', user_id: 'u1', user: mockUsers[0], activity_type: 'measurements_entered', description: 'Contamination analysis: toluene 85 ppm, xylene 32 ppm. Waste/other 0.15% v/v (ISO 8217 max 0.10%).', created_at: '2026-06-04T09:00:00Z' },
+  { id: 'a27', case_id: 'c10', user_id: 'u4', user: mockUsers[3], activity_type: 'draft_created',      description: 'Emergency LOP and contamination notice to supplier and port authority drafted.', created_at: '2026-06-04T11:00:00Z' },
+  { id: 'a28', case_id: 'c10', user_id: 'u1', user: mockUsers[0], activity_type: 'call_logged',         description: 'Call with vessel master. Vessel reduced to slow steam. Off-hire claim accumulating. Full tank cleaning required.', created_at: '2026-06-06T07:30:00Z' },
+  { id: 'a29', case_id: 'c10', user_id: 'u1', user: mockUsers[0], activity_type: 'status_changed',     description: 'Status escalated. P&I Club notified. Legal counsel engaged. Contamination source investigation requested from supplier.', created_at: '2026-06-12T09:00:00Z' },
+  // c11: Las Palmas VLSFO quantity over (resolved)
+  { id: 'a30', case_id: 'c11', user_id: 'u3', user: mockUsers[2], activity_type: 'case_created',      description: 'Case CPM-2026-0033 created. Over-delivery 8.4 MT — 2.6% above BDN quantity.', created_at: '2026-05-07T09:00:00Z' },
+  { id: 'a31', case_id: 'c11', user_id: 'u3', user: mockUsers[2], activity_type: 'document_uploaded',  description: 'BDN DEL-2026-0388 and post-bunkering ullage report uploaded.', created_at: '2026-05-07T09:30:00Z' },
+  { id: 'a32', case_id: 'c11', user_id: 'u3', user: mockUsers[2], activity_type: 'email_logged',        description: 'Sent over-delivery notification to supplier GreenBunker. Requested revised BDN and invoice correction.', created_at: '2026-05-08T10:00:00Z' },
+  { id: 'a33', case_id: 'c11', user_id: 'u3', user: mockUsers[2], activity_type: 'action_completed',   description: 'Revised BDN 328.4 MT received from GreenBunker. Adjusted invoice USD 4,116 credited. Case resolved.', created_at: '2026-05-15T11:00:00Z' },
+  // c12: Le Havre LSMGO MFM dispute
+  { id: 'a34', case_id: 'c12', user_id: 'u2', user: mockUsers[1], activity_type: 'case_created',      description: 'Case CPM-2026-0059 opened. MFM record 163.5 MT vs BDN 180 MT — 9.2% discrepancy.', created_at: '2026-06-09T09:00:00Z' },
+  { id: 'a35', case_id: 'c12', user_id: 'u2', user: mockUsers[1], activity_type: 'document_uploaded',  description: 'BDN, MFM readout, barge soundings, and Le Havre shore tank outturn report uploaded.', created_at: '2026-06-09T10:00:00Z' },
+  { id: 'a36', case_id: 'c12', user_id: 'u2', user: mockUsers[1], activity_type: 'measurements_entered', description: 'Four measurement sources entered: MFM 163.5, barge 180.2, vessel ullage 167.8, shore tank ~169 MT.', created_at: '2026-06-09T10:30:00Z' },
+  { id: 'a37', case_id: 'c12', user_id: 'u4', user: mockUsers[3], activity_type: 'note_added',          description: 'Supplier claims MFM calibration drift. Requesting calibration certificate and OIML accreditation records for the MFM.', created_at: '2026-06-09T15:00:00Z' },
+  // c13: Genoa B24 off-spec
+  { id: 'a38', case_id: 'c13', user_id: 'u1', user: mockUsers[0], activity_type: 'case_created',      description: 'Case CPM-2026-0061 created. FAME content 27.2% v/v — exceeds 24% supply nomination and ISO 8217 limit.', created_at: '2026-06-05T11:00:00Z' },
+  { id: 'a39', case_id: 'c13', user_id: 'u1', user: mockUsers[0], activity_type: 'document_uploaded',  description: 'DNV lab report (GEN-2026-9921), supply nomination, and BDN uploaded.', created_at: '2026-06-05T12:00:00Z' },
+  { id: 'a40', case_id: 'c13', user_id: 'u4', user: mockUsers[3], activity_type: 'email_logged',        description: 'Formal notice of off-spec B24 delivered to Gascogne Marine. Requested remediation plan and cost proposal.', created_at: '2026-06-06T09:00:00Z' },
+  { id: 'a41', case_id: 'c13', user_id: 'u1', user: mockUsers[0], activity_type: 'status_changed',     description: 'Status moved to Under Review. FuelEU compliance impact assessment requested from technical manager.', created_at: '2026-06-11T14:00:00Z' },
+  // c14: Amsterdam VLSFO quantity short
+  { id: 'a42', case_id: 'c14', user_id: 'u2', user: mockUsers[1], activity_type: 'case_created',      description: 'Case CPM-2026-0064 created. Vessel ullage 934.2 MT and BV surveyor 941.8 MT both below BDN 950 MT.', created_at: '2026-06-12T09:00:00Z' },
+  { id: 'a43', case_id: 'c14', user_id: 'u2', user: mockUsers[1], activity_type: 'document_uploaded',  description: 'BDN DEL-2026-0501, Bureau Veritas survey certificate, and vessel ullage report uploaded.', created_at: '2026-06-12T10:00:00Z' },
+  { id: 'a44', case_id: 'c14', user_id: 'u2', user: mockUsers[1], activity_type: 'measurements_entered', description: 'Figures entered: vessel 934.2 MT, barge 952.7 MT (disputed), BV surveyor 941.8 MT. Shortage 8-16 MT confirmed.', created_at: '2026-06-12T10:30:00Z' },
+  { id: 'a45', case_id: 'c14', user_id: 'u4', user: mockUsers[3], activity_type: 'email_logged',        description: 'Formal Notice of Shortage sent to Bunker One Amsterdam. Response requested within 5 business days.', created_at: '2026-06-12T14:00:00Z' },
+)
+
 // ── Fuel Readiness ────────────────────────────────────────────────────────────
 
 export const mockFuelReadiness: FuelReadinessRecord[] = [

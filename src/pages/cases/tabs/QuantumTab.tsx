@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import type { Case } from '@/types'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/FormField'
-import { formatQuantity } from '@/lib/utils'
-import { DollarSign, AlertTriangle, Scale, TrendingDown, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { formatQuantity, downloadCsv } from '@/lib/utils'
+import { DollarSign, AlertTriangle, Scale, TrendingDown, FileText, Download } from 'lucide-react'
 
 interface QuantumTabProps {
   case_: Case
@@ -201,6 +202,18 @@ export function QuantumTab({ case_ }: QuantumTabProps) {
 
   const conservativeTotal = Math.round(grandTotal * 0.6)
 
+  const handleExport = useCallback(() => {
+    const rows = allLines.map((l) => ({
+      'Head of Claim': l.label,
+      'Basis': l.basis,
+      'Amount (USD)': l.amount,
+      'Subtotal': l.isSubtotal ? 'Yes' : 'No',
+    }))
+    rows.push({ 'Head of Claim': 'GRAND TOTAL', 'Basis': '', 'Amount (USD)': grandTotal, 'Subtotal': 'Yes' })
+    downloadCsv(rows, `quantum-${case_.reference ?? case_.id}.csv`)
+  }, [allLines, grandTotal, case_.reference, case_.id])
+
+
   const sections: { title: string; icon: React.ReactNode; lines: LineItem[] }[] = []
   if (isQuantity && quantityLines.length > 0) {
     sections.push({ title: 'Quantity Claim', icon: <TrendingDown className="h-4 w-4 text-amber-500" />, lines: quantityLines })
@@ -215,11 +228,16 @@ export function QuantumTab({ case_ }: QuantumTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* Disclaimer */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
-        <strong>Indicative only.</strong> Figures are estimates for internal claim management purposes.
-        Actual quantum depends on contract terms, governing law, and final evidence. Consult legal counsel
-        before submitting any formal claim.
+      {/* Disclaimer + export */}
+      <div className="flex items-start gap-3">
+        <div className="flex-1 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+          <strong>Indicative only.</strong> Figures are estimates for internal claim management purposes.
+          Actual quantum depends on contract terms, governing law, and final evidence. Consult legal counsel
+          before submitting any formal claim.
+        </div>
+        <Button variant="secondary" size="sm" onClick={handleExport}>
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </Button>
       </div>
 
       {/* KPIs */}
