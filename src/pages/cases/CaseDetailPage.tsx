@@ -182,7 +182,7 @@ export function CaseDetailPage() {
           {activeTab === 'drafts' && <DraftsTab caseId={case_.id} />}
           {activeTab === 'activity' && <ActivityTab caseId={case_.id} />}
           {activeTab === 'notes' && <NotesTab caseId={case_.id} />}
-          {activeTab === 'fuel_readiness' && <FuelReadinessTab vesselId={case_.vessel_id} />}
+          {activeTab === 'fuel_readiness' && <FuelReadinessTab vesselId={case_.vessel_id} fuelType={case_.fuel_type} />}
         </div>
       </div>
 

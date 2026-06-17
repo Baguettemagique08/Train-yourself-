@@ -3,7 +3,7 @@ import type { Case } from '@/types'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/FormField'
 import { formatQuantity } from '@/lib/utils'
-import { DollarSign, AlertTriangle, Scale, TrendingDown } from 'lucide-react'
+import { DollarSign, AlertTriangle, Scale, TrendingDown, FileText } from 'lucide-react'
 
 interface QuantumTabProps {
   case_: Case
@@ -140,9 +140,47 @@ function buildCostLines(): LineItem[] {
   ]
 }
 
+interface ManualHeads {
+  demurrage: number
+  bdnRectification: number
+  offHire: number
+  otherDirect: number
+}
+
+const MANUAL_HEAD_LABELS: Record<keyof ManualHeads, { label: string; basis: string }> = {
+  demurrage:        { label: 'Demurrage / Detention',         basis: 'Delay arising directly from the dispute' },
+  bdnRectification: { label: 'BDN Rectification / Re-issue',  basis: 'Cost to obtain corrected documentation' },
+  offHire:          { label: 'Off-Hire / Loss of Time',       basis: 'Vessel earnings lost while dispute unresolved' },
+  otherDirect:      { label: 'Other Direct Losses',           basis: 'Any other quantifiable head (specify in notes)' },
+}
+
+function buildManualLines(heads: ManualHeads): LineItem[] {
+  const lines: LineItem[] = (Object.keys(heads) as (keyof ManualHeads)[])
+    .filter((k) => heads[k] > 0)
+    .map((k) => ({
+      label: MANUAL_HEAD_LABELS[k].label,
+      basis: MANUAL_HEAD_LABELS[k].basis,
+      amount: heads[k],
+    }))
+  if (lines.length === 0) return []
+  lines.push({
+    label: 'Subtotal — Manual Claim Heads',
+    basis: '',
+    amount: lines.reduce((s, l) => s + l.amount, 0),
+    isSubtotal: true,
+  })
+  return lines
+}
+
 export function QuantumTab({ case_ }: QuantumTabProps) {
   const defaultPrice = FUEL_PRICE_DEFAULTS[case_.fuel_type] ?? 650
   const [unitPrice, setUnitPrice] = useState(defaultPrice)
+  const [manualHeads, setManualHeads] = useState<ManualHeads>({
+    demurrage: 0,
+    bdnRectification: 0,
+    offHire: 0,
+    otherDirect: 0,
+  })
 
   const bdn = case_.bdn_quantity ?? 0
   const vessel = case_.claimed_quantity ?? bdn
@@ -150,16 +188,18 @@ export function QuantumTab({ case_ }: QuantumTabProps) {
 
   const quantityLines = buildQuantityLines(case_, unitPrice)
   const qualityLines = buildQualityLines(case_, unitPrice)
+  const manualLines = buildManualLines(manualHeads)
   const costLines = buildCostLines()
 
-  const allLines = [...quantityLines, ...qualityLines, ...costLines]
+  const isQuantity = ['quantity_short', 'quantity_over', 'mfm_dispute'].includes(case_.discrepancy_type)
+  const isQuality = ['off_spec', 'contamination'].includes(case_.discrepancy_type)
+  const showManual = !isQuantity && !isQuality
+
+  const allLines = [...quantityLines, ...qualityLines, ...manualLines, ...costLines]
   const subtotals = allLines.filter((l) => l.isSubtotal).map((l) => l.amount)
   const grandTotal = subtotals.reduce((s, v) => s + v, 0)
 
   const conservativeTotal = Math.round(grandTotal * 0.6)
-
-  const isQuantity = ['quantity_short', 'quantity_over', 'mfm_dispute'].includes(case_.discrepancy_type)
-  const isQuality = ['off_spec', 'contamination'].includes(case_.discrepancy_type)
 
   const sections: { title: string; icon: React.ReactNode; lines: LineItem[] }[] = []
   if (isQuantity && quantityLines.length > 0) {
@@ -167,6 +207,9 @@ export function QuantumTab({ case_ }: QuantumTabProps) {
   }
   if (isQuality && qualityLines.length > 0) {
     sections.push({ title: 'Quality / Spec Claim', icon: <AlertTriangle className="h-4 w-4 text-red-500" />, lines: qualityLines })
+  }
+  if (showManual && manualLines.length > 0) {
+    sections.push({ title: 'Manual Claim Heads', icon: <FileText className="h-4 w-4 text-indigo-500" />, lines: manualLines })
   }
   sections.push({ title: 'Costs & Expenses', icon: <Scale className="h-4 w-4 text-blue-500" />, lines: costLines })
 
@@ -226,6 +269,30 @@ export function QuantumTab({ case_ }: QuantumTabProps) {
           </div>
         </div>
       </Card>
+
+      {/* Manual claim heads — shown for documentation/other dispute types */}
+      {showManual && (
+        <Card>
+          <CardHeader
+            title="Manual Claim Heads"
+            subtitle="Enter amounts for applicable heads of claim (leave 0 to exclude)"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(Object.keys(manualHeads) as (keyof ManualHeads)[]).map((k) => (
+              <Input
+                key={k}
+                label={MANUAL_HEAD_LABELS[k].label}
+                type="number"
+                min={0}
+                step={100}
+                value={manualHeads[k]}
+                onChange={(e) => setManualHeads((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
+                hint={MANUAL_HEAD_LABELS[k].basis}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Claim sections */}
       {sections.map((sec) => (

@@ -7,17 +7,24 @@ import { CheckCircle, Circle, ArrowRight } from 'lucide-react'
 
 interface FuelReadinessTabProps {
   vesselId: string
+  fuelType: string
 }
 
-export function FuelReadinessTab({ vesselId }: FuelReadinessTabProps) {
+export function FuelReadinessTab({ vesselId, fuelType }: FuelReadinessTabProps) {
   const navigate = useNavigate()
-  const records = mockFuelReadiness.filter((r) => r.vessel_id === vesselId)
+  const allVesselRecords = mockFuelReadiness.filter((r) => r.vessel_id === vesselId)
+  const records = allVesselRecords.filter((r) => r.fuel_type === fuelType)
+  const hasOtherRecords = allVesselRecords.length > records.length
 
   if (records.length === 0) {
     return (
       <EmptyState
-        title="No fuel readiness records for this vessel"
-        description="Track alternative fuel readiness status on the Alt Fuel Readiness page."
+        title={`No ${fuelType} readiness record for this vessel`}
+        description={
+          hasOtherRecords
+            ? `This vessel has readiness records for other fuel types. View all on the Alt Fuel Readiness page.`
+            : `Track alternative fuel readiness status on the Alt Fuel Readiness page.`
+        }
         action={
           <Button onClick={() => navigate('/fuel-readiness')}>
             <ArrowRight className="h-4 w-4" /> Go to Fuel Readiness
@@ -29,7 +36,14 @@ export function FuelReadinessTab({ vesselId }: FuelReadinessTabProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-500">Alternative fuel readiness status for this vessel.</p>
+      <p className="text-sm text-slate-500">
+        {fuelType} readiness status for this vessel.
+        {hasOtherRecords && (
+          <button onClick={() => navigate('/fuel-readiness')} className="ml-2 text-blue-600 hover:underline text-xs">
+            View all fuel types →
+          </button>
+        )}
+      </p>
       {records.map((rec) => (
         <div key={rec.id} className="bg-white border border-slate-200 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
