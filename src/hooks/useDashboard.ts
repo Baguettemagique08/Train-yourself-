@@ -14,6 +14,7 @@ import type {
   DashboardCounterpartyRisk,
   DashboardData,
   DashboardKpi,
+  DashboardTimeBarItem,
   DueUrgency,
   FuelType,
   RiskLevel,
@@ -195,6 +196,39 @@ function buildDisputeTrend() {
   return weeks
 }
 
+function buildTimeBars(): DashboardTimeBarItem[] {
+  const now = REFERENCE_NOW.getTime()
+  const WINDOW_MS = 60 * DAY_MS
+  const items: DashboardTimeBarItem[] = []
+
+  for (const c of caseRegistry.values()) {
+    const addItem = (deadline: string, barType: 'notice' | 'time_bar') => {
+      const ms = new Date(deadline).getTime()
+      const daysRemaining = Math.floor((ms - now) / DAY_MS)
+      if (ms - now > WINDOW_MS) return
+      const urgency: DashboardTimeBarItem['urgency'] =
+        daysRemaining < 0 ? 'overdue'
+          : daysRemaining <= 7 ? 'critical'
+            : daysRemaining <= 21 ? 'warning'
+              : 'ok'
+      items.push({
+        case_id: c.id,
+        reference: c.reference,
+        vessel_name: c.vessel?.name ?? '—',
+        port_name: c.port?.name ?? '—',
+        bar_type: barType,
+        deadline,
+        days_remaining: daysRemaining,
+        urgency,
+      })
+    }
+    if (c.claim_notice_deadline) addItem(c.claim_notice_deadline, 'notice')
+    if (c.claim_time_bar) addItem(c.claim_time_bar, 'time_bar')
+  }
+
+  return items.sort((a, b) => a.days_remaining - b.days_remaining)
+}
+
 function computeDashboard(): DashboardData {
   const allCases = [...caseRegistry.values()]
   const caseRef = new Map(allCases.map((c) => [c.id, c]))
@@ -288,6 +322,7 @@ function computeDashboard(): DashboardData {
     readiness_due,
     counterparty_risk: buildCounterpartyRisk(),
     dispute_trend: buildDisputeTrend(),
+    time_bars: buildTimeBars(),
   }
 }
 

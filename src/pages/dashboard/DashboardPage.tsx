@@ -11,8 +11,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatDate, formatRelative, documentTypeLabel } from '@/lib/utils'
 import type {
-  DashboardData, DashboardKpi, DashboardActionItem, DueUrgency,
-  DashboardCounterpartyRisk, DashboardTrendPoint, RiskLevel, PriorityLevel,
+  DashboardData, DashboardKpi, DashboardActionItem, DashboardTimeBarItem,
+  DueUrgency, DashboardCounterpartyRisk, DashboardTrendPoint, RiskLevel, PriorityLevel,
 } from '@/types'
 
 // ── Small formatting helpers ─────────────────────────────────────────────────
@@ -238,6 +238,65 @@ function RiskPanel({ rows, onView }: { rows: DashboardCounterpartyRisk[]; onView
   )
 }
 
+// ── Expiring time bars panel ──────────────────────────────────────────────────
+
+const TB_STYLES: Record<DashboardTimeBarItem['urgency'], { row: string; badge: string; label: string }> = {
+  overdue:  { row: 'bg-red-50/60 dark:bg-red-900/10',  badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',    label: 'Overdue' },
+  critical: { row: 'bg-red-50/30 dark:bg-red-900/5',   badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',    label: 'Critical' },
+  warning:  { row: '',                                  badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: 'Warning' },
+  ok:       { row: '',                                  badge: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300', label: 'OK' },
+}
+
+function TimeBarsPanel({ items, onNavigate }: { items: DashboardTimeBarItem[]; onNavigate: (id: string) => void }) {
+  if (items.length === 0) return null
+  return (
+    <Panel>
+      <PanelHeader
+        title="Expiring Time Bars"
+        subtitle="Formal notice & claim deadlines within 60 days"
+      />
+      <div className="divide-y divide-slate-100 dark:divide-slate-700">
+        {items.slice(0, 8).map((item) => {
+          const s = TB_STYLES[item.urgency]
+          const daysLabel =
+            item.days_remaining < 0
+              ? `${Math.abs(item.days_remaining)}d overdue`
+              : item.days_remaining === 0
+                ? 'Due today'
+                : `${item.days_remaining}d left`
+          return (
+            <button
+              key={`${item.case_id}-${item.bar_type}`}
+              onClick={() => onNavigate(item.case_id)}
+              className={`w-full text-left px-5 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${s.row}`}
+            >
+              <Clock className={`h-4 w-4 flex-shrink-0 ${item.urgency === 'ok' ? 'text-slate-400' : item.urgency === 'warning' ? 'text-amber-500' : 'text-red-500'}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">{item.reference}</span>
+                  <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 ${s.badge}`}>{s.label}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                    {item.bar_type === 'notice' ? 'Formal Notice' : 'Time Bar'}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate mt-0.5">{item.vessel_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{item.port_name}</p>
+              </div>
+              <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                <span className={`text-sm font-bold tabular-nums ${item.urgency === 'ok' ? 'text-slate-700 dark:text-slate-300' : item.urgency === 'warning' ? 'text-amber-700 dark:text-amber-400' : 'text-red-700 dark:text-red-400'}`}>
+                  {daysLabel}
+                </span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatDate(item.deadline)}</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 flex-shrink-0" />
+            </button>
+          )
+        })}
+      </div>
+    </Panel>
+  )
+}
+
 // ── Skeleton view ────────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
@@ -299,7 +358,7 @@ export function DashboardPage() {
 }
 
 function DashboardContent({ data, navigate }: { data: DashboardData; navigate: (to: string) => void }) {
-  const { kpis, action_items, activity, recent_uploads, spec_alerts, readiness_due, counterparty_risk, dispute_trend } = data
+  const { kpis, action_items, activity, recent_uploads, spec_alerts, readiness_due, counterparty_risk, dispute_trend, time_bars } = data
 
   const overdue = action_items.filter((i) => i.due_urgency === 'overdue').length
   const dueToday = action_items.filter((i) => i.due_urgency === 'today').length
@@ -369,6 +428,9 @@ function DashboardContent({ data, navigate }: { data: DashboardData; navigate: (
               </div>
             )}
           </Panel>
+
+          {/* Expiring time bars */}
+          <TimeBarsPanel items={time_bars} onNavigate={(id) => navigate(`/cases/${id}`)} />
 
           {/* Trend + risk */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

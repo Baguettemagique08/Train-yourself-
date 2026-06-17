@@ -736,6 +736,17 @@ export interface DashboardTrendPoint {
   closed: number
 }
 
+export interface DashboardTimeBarItem {
+  case_id: string
+  reference: string
+  vessel_name: string
+  port_name: string
+  bar_type: 'notice' | 'time_bar'
+  deadline: string
+  days_remaining: number
+  urgency: 'overdue' | 'critical' | 'warning' | 'ok'
+}
+
 export interface DashboardData {
   /** When the snapshot was generated (ISO). */
   generated_at: string
@@ -747,6 +758,7 @@ export interface DashboardData {
   readiness_due: DashboardReadinessItem[]
   counterparty_risk: DashboardCounterpartyRisk[]
   dispute_trend: DashboardTrendPoint[]
+  time_bars: DashboardTimeBarItem[]
 }
 
 export interface ReconcilerRow {
